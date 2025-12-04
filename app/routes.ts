@@ -19,3 +19,16 @@ export default [
   route('thank-you', 'routes/thank-you.tsx'),
 
 ] satisfies RouteConfig;
+
+export const ROUTES= {
+  HOME: "/",
+  AUTH: "/auth",
+  DASHBOARD: "/dashboard",
+  DASHBOARD_ME: "/dashboard/me",
+  DASHBOARD_FORM: (formId: string) => `/dashboard/form/${formId}`,
+  DASHBOARD_FORM_EDIT: (formId: string) => `/dashboard/form/${formId}/edit`,
+  DASHBOARD_FORM_SUBMISSIONS: (formId: string) => `/dashboard/form/${formId}/submissions`,
+  DASHBOARD_FORM_SUBMISSION: (formId: string, submissionId: string) => `/dashboard/form/${formId}/submission/${submissionId}`,
+  SUBMIT_FORM: (formId: string) => `/submit/${formId}`,
+  THANK_YOU: "/thank-you",
+} as const;

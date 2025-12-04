@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  userId    String   @unique @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions Session[]
+  forms    Form[]
+
+  @@index([createdAt, name])
+}
+
+model Participant {
+  id            Int          @id @default(autoincrement())
+  participantId String       @unique @default(cuid())
+  email         String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  formAnswers   FormAnswer[]
+
+  @@index([email])
+}
+
+model Form {
+  id              Int              @id @default(autoincrement())
+  formId          String           @unique @default(cuid())
+  title           String
+  description     String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  formSubmissions FormSubmission[]
+  creatorId       Int
+  creator         User             @relation(fields: [creatorId], references: [id])
+  formAnswers     FormAnswer[]
+  pages           Page[]
+  pagesTotal      Int              @default(1)
+
+  @@index([title, createdAt, creatorId])
+}
+
+model Page {
+  id         Int         @id @default(autoincrement())
+  pageId     String      @unique @default(cuid())
+  formId     Int
+  form       Form        @relation(fields: [formId], references: [id])
+  formFields FormField[]
+  pageNumber Int
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([formId, createdAt])
+}
+
+model FormField {
+  id          Int           @id @default(autoincrement())
+  fieldId     String        @unique @default(cuid())
+  label       String
+  type        FormFieldType
+  isRequired  Boolean       @default(false)
+  position    Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  formAnswers FormAnswer[]
+  pageId      Int
+  page        Page          @relation(fields: [pageId], references: [id])
+
+  @@index([type, createdAt, pageId])
+}
+
+model FormAnswer {
+  id               Int            @id @default(autoincrement())
+  formId           Int
+  form             Form           @relation(fields: [formId], references: [id])
+  fieldId          Int
+  formField        FormField      @relation(fields: [fieldId], references: [id])
+  answer           String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  participant      Participant    @relation(fields: [participantId], references: [id])
+  participantId    Int
+
+  @@index([fieldId])
+}
+
+model FormSubmission {
+  id          String       @id @default(cuid())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  form        Form         @relation(fields: [formId], references: [id])
+  formId      Int
+
+  @@index([createdAt, formId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expires   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+enum FormFieldType {
+  TEXTAREA
+  SELECT
+  RADIO
+  CHECKBOX
+  TEXT
+  DATE
+  NUMBER
+  PARAGRAPH
+  HEADER
+  LINK
+}

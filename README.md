@@ -11,7 +11,7 @@ Admin: use auth middleware here
   - /dashboard/form/:formId/edit (edit form) + live preview
   - /dashboard/form/:formId/statistics (view form statistics)
   - /dashboard/form/:formId/submissions (view form submissions)
-  - /dashboard/form/:formId/submission/:submissionId (view single submission)
+  - /dashboard/form/:formId/submissions/:submissionId (view single submission)
   - /dashboard/me (view and edit user profile) + password reset flow
 
 Public: no auth middleware here but email is required to fill out the form
