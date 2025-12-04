@@ -1,10 +1,8 @@
-import React from 'react'
+import React from "react";
 
 //customizable
 const ThankYou = () => {
-  return (
-    <div>ThankYou</div>
-  )
-}
+  return <div>ThankYou</div>;
+};
 
-export default ThankYou
+export default ThankYou;

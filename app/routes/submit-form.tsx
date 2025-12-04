@@ -1,9 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const SubmitForm = () => {
-  return (
-    <div>SubmitForm</div>
-  )
-}
+  return <div>SubmitForm</div>;
+};
 
-export default SubmitForm
+export default SubmitForm;

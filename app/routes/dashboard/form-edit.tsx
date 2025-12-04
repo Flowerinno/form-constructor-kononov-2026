@@ -1,9 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const FormEdit = () => {
-  return (
-    <div>FormEdit</div>
-  )
-}
+  return <div>FormEdit</div>;
+};
 
-export default FormEdit
+export default FormEdit;
