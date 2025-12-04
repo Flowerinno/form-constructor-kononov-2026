@@ -1,10 +1,11 @@
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -79,26 +80,26 @@ model FormField {
 }
 
 model FormAnswer {
-  id               Int            @id @default(autoincrement())
-  formId           Int
-  form             Form           @relation(fields: [formId], references: [id])
-  fieldId          Int
-  formField        FormField      @relation(fields: [fieldId], references: [id])
-  answer           String
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  participant      Participant    @relation(fields: [participantId], references: [id])
-  participantId    Int
+  id            Int         @id @default(autoincrement())
+  formId        Int
+  form          Form        @relation(fields: [formId], references: [id])
+  fieldId       Int
+  formField     FormField   @relation(fields: [fieldId], references: [id])
+  answer        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  participant   Participant @relation(fields: [participantId], references: [id])
+  participantId Int
 
   @@index([fieldId])
 }
 
 model FormSubmission {
-  id          String       @id @default(cuid())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  form        Form         @relation(fields: [formId], references: [id])
-  formId      Int
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  form      Form     @relation(fields: [formId], references: [id])
+  formId    Int
 
   @@index([createdAt, formId])
 }

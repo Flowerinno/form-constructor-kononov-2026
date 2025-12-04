@@ -2,25 +2,24 @@ import { type RouteConfig, index, layout, prefix, route } from "@react-router/de
 
 export default [
   index("routes/home.tsx"),
-  route('/auth', 'routes/auth.tsx'),
+  route("/auth", "routes/auth.tsx"),
 
-  layout('layout/auth.tsx', [
-    ...prefix('/dashboard', [
-      index('routes/dashboard/index.tsx'),
-      route('me', 'routes/dashboard/profile.tsx'),
-      route('form/:formId', 'routes/dashboard/form.tsx'),
-      route('form/:formId/edit', 'routes/dashboard/form-edit.tsx'),
-      route('form/:formId/submissions', 'routes/dashboard/form-submissions.tsx'),
-      route('form/:formId/submission/:submissionId', 'routes/dashboard/form-submission.tsx'),
+  layout("layout/auth.tsx", [
+    ...prefix("/dashboard", [
+      index("routes/dashboard/index.tsx"),
+      route("me", "routes/dashboard/profile.tsx"),
+      route("form/:formId", "routes/dashboard/form.tsx"),
+      route("form/:formId/edit", "routes/dashboard/form-edit.tsx"),
+      route("form/:formId/submissions", "routes/dashboard/form-submissions.tsx"),
+      route("form/:formId/submission/:submissionId", "routes/dashboard/form-submission.tsx"),
     ]),
   ]),
 
-  route('submit/:formId', 'routes/submit-form.tsx'),
-  route('thank-you', 'routes/thank-you.tsx'),
-
+  route("submit/:formId", "routes/submit-form.tsx"),
+  route("thank-you", "routes/thank-you.tsx"),
 ] satisfies RouteConfig;
 
-export const ROUTES= {
+export const ROUTES = {
   HOME: "/",
   AUTH: "/auth",
   DASHBOARD: "/dashboard",
@@ -28,7 +27,8 @@ export const ROUTES= {
   DASHBOARD_FORM: (formId: string) => `/dashboard/form/${formId}`,
   DASHBOARD_FORM_EDIT: (formId: string) => `/dashboard/form/${formId}/edit`,
   DASHBOARD_FORM_SUBMISSIONS: (formId: string) => `/dashboard/form/${formId}/submissions`,
-  DASHBOARD_FORM_SUBMISSION: (formId: string, submissionId: string) => `/dashboard/form/${formId}/submission/${submissionId}`,
+  DASHBOARD_FORM_SUBMISSION: (formId: string, submissionId: string) =>
+    `/dashboard/form/${formId}/submission/${submissionId}`,
   SUBMIT_FORM: (formId: string) => `/submit/${formId}`,
   THANK_YOU: "/thank-you",
 } as const;

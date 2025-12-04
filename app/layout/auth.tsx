@@ -1,11 +1,10 @@
-
-const AuthLayout
- = ({children}: {children: React.ReactNode}) => {
+const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div>AuthLayout
+    <div>
+      AuthLayout
       {children}
     </div>
-  )
-}
+  );
+};
 
-export default AuthLayout
+export default AuthLayout;

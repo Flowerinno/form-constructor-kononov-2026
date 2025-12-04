@@ -1,9 +1,7 @@
-import React from 'react'
+import React from "react";
 
 const FormSubmissions = () => {
-  return (
-    <div>FormSubmissions</div>
-  )
-}
+  return <div>FormSubmissions</div>;
+};
 
-export default FormSubmissions
+export default FormSubmissions;
