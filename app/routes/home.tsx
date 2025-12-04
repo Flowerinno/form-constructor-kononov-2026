@@ -1,25 +1,21 @@
+import { redirect } from "react-router";
+import { ROUTES } from "~/routes";
 import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
 
-/**
- * Description placeholder
- *
- * @export
- * @param {Route.MetaArgs} param0 
- * @returns {{}} 
- */
+
+
+export const loader = async ({ request, params }: Route.LoaderArgs) => {
+  throw redirect(ROUTES.AUTH);
+  return {data: null}
+};
+
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Form constructor" },
   ];
 }
 
-/**
- * Description placeholder
- *
- * @export
- * @returns {*} 
- */
 export default function Home() {
   return <p>redirect</p>;
 }
