@@ -2,6 +2,7 @@
 @import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant light (&:is(.light *));
 
 @theme {
   --font-sans:
@@ -9,21 +10,12 @@
     'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
-html,
-body {
-  @apply dark:bg-gray-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-[#0a0a0a] text-shadow-white;
+    @apply bg-background text-foreground;
   }
 
   .heading {
@@ -35,7 +27,7 @@ body {
   }
 }
 
-:root {
+:root.dark  {
     --background: #0a0a0a;
     --foreground: #ffffff;
     --card: #ffffff;
@@ -95,7 +87,71 @@ body {
     --spacing: 0.25rem;
   }
 
-  .dark {
+:root.light {
+  --background: #fafafa;
+  --foreground: #0a0a0a;
+  --card: #ffffff; /* Typically light cards are white or very light */
+  --card-foreground: #0a0a0a;
+  --popover: #ffffff; /* Typically light popovers are white or very light */
+  --popover-foreground: #0a0a0a;
+  --primary: #171717; /* Darker primary for light background */
+  --primary-foreground: #fafafa;
+  --secondary: #f4f4f5; /* Lighter secondary for light background */
+  --secondary-foreground: #171717;
+  --muted: #f4f4f5; /* Lighter muted for light background */
+  --muted-foreground: #71717a; /* Darker muted text */
+  --accent: #e4e4e7; /* Lighter accent for light background */
+  --accent-foreground: #171717;
+  --destructive: #ef4444; /* Standard red for destructive, maybe a bit brighter */
+  --destructive-foreground: #fafafa;
+  --border: #e5e5e5; /* Lighter border */
+  --input: #e5e5e5; /* Lighter input */
+  --ring: #a3a3a3; /* Darker ring for focus */
+
+  /* Chart colors usually remain the same or adjust slightly for contrast */
+  --chart-1: #91c5ff;
+  --chart-2: #3a81f6;
+  --chart-3: #2563ef;
+  --chart-4: #1a4eda;
+  --chart-5: #1f3fad;
+
+  /* Sidebar colors swapped for light theme */
+  --sidebar: #ffffff; /* Light background */
+  --sidebar-foreground: #0a0a0a; /* Dark text */
+  --sidebar-primary: #1447e6; /* Darker primary button color */
+  --sidebar-primary-foreground: #fafafa; /* Light text on primary button */
+  --sidebar-accent: #f4f4f5; /* Lighter accent/hover state */
+  --sidebar-accent-foreground: #171717; /* Darker text on accent */
+  --sidebar-border: #e5e5e5; /* Lighter border */
+  --sidebar-ring: #a3a3a3; /* Darker ring */
+
+  /* Fonts, Radius, and Shadows usually remain the same or adjust in color/opacity */
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
+    monospace;
+  --radius: 0.625rem;
+  --shadow-x: 0;
+  --shadow-y: 1px;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-opacity: 0.05; /* Reduced shadow opacity for light theme */
+  --shadow-color: oklch(0 0 0);
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.025);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.025);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.05), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.05), 0 1px 2px -1px hsl(0 0% 0% / 0.03);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.05), 0 2px 4px -1px hsl(0 0% 0% / 0.03);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.05), 0 4px 6px -1px hsl(0 0% 0% / 0.03);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.05), 0 8px 10px -1px hsl(0 0% 0% / 0.03);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1);
+}
+
+  /* .dark {
     --background: #0a0a0a;
     --foreground: #fafafa;
     --card: #171717;
@@ -151,7 +207,7 @@ body {
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-  }
+  } */
 
   @theme inline {
     --color-background: var(--background);

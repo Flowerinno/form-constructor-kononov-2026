@@ -35,11 +35,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 const AuthLayout = () => {
   const data = useLoaderData<typeof loader>()
   return (
-    <div id="main-layout" className="flex min-h-full min-w-full">
+    <div id="main-layout" className="flex min-h-full min-w-full relative">
       <SidebarProvider>
         <AppSidebar />
         <main className='flex flex-col min-h-full w-full'>
-        <SidebarTrigger />
+        <SidebarTrigger className='mt-2 ml-2' />
         <section className='p-4'>
         <Outlet context={data.userData} />
         </section>

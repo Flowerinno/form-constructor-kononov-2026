@@ -16,6 +16,7 @@ export default [
     ]),
   ]),
 
+  route('logout', 'routes/logout.ts'),
   route('submit/:formId', 'routes/submit-form.tsx'),
   route('thank-you', 'routes/thank-you.tsx'),
 ] satisfies RouteConfig
@@ -31,6 +32,9 @@ export const ROUTES = {
   DASHBOARD_FORM_SUBMISSION: (formId: string, submissionId: string) =>
     `/dashboard/form/${formId}/submission/${submissionId}`,
   DASHBOARD_STATISTICS: '/dashboard/statistics',
+  LOGOUT: '/logout',
+
+  // USER FACING
   SUBMIT_FORM: (formId: string) => `/submit/${formId}`,
   THANK_YOU: '/thank-you',
 } as const

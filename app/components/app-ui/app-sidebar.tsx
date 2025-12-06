@@ -1,6 +1,5 @@
-import { Home, Inbox, Settings } from "lucide-react"
-import { Link, useLocation } from "react-router"
-
+import { Home, Inbox, LogOutIcon, Settings } from 'lucide-react'
+import { Link, useLocation } from 'react-router'
 import {
   Sidebar,
   SidebarContent,
@@ -10,30 +9,34 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "~/components/ui/sidebar"
-import { ROUTES } from "~/routes"
+} from '~/components/ui/sidebar'
+import { ROUTES } from '~/routes'
 
-// Menu items.
 const items = [
   {
-    title: "Forms",
+    title: 'Forms',
     url: ROUTES.DASHBOARD,
     icon: Home,
   },
   {
-    title: "Profile",
+    title: 'Profile',
     url: ROUTES.DASHBOARD_ME,
     icon: Inbox,
   },
   {
-    title: "Statistics",
+    title: 'Statistics',
     url: ROUTES.DASHBOARD_STATISTICS,
     icon: Settings,
+  },
+  {
+    title: 'Logout',
+    url: ROUTES.LOGOUT,
+    icon: LogOutIcon,
   },
 ] as const
 
 export function AppSidebar() {
-  const location = useLocation();
+  const location = useLocation()
   return (
     <Sidebar>
       <SidebarContent>
