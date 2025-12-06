@@ -1,7 +1,10 @@
 import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 
+import { SunIcon } from 'lucide-react';
+import { useState } from 'react';
 import type { Route } from './+types/root';
 import './app.css';
+import { Toaster } from './components/ui/sonner';
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -17,16 +20,19 @@ export const links: Route.LinksFunction = () => [
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState('dark');
   return (
-    <html lang='en'>
+    <html lang='en' className={theme}>
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1' />
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className='relative'>
+        <SunIcon className="absolute z-10 top-4 right-4 cursor-pointer dark:text-white hover:text-purple-400 transition-all duration-150" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />
         {children}
+        <Toaster position='top-right' duration={3000} />
         <ScrollRestoration />
         <Scripts />
       </body>

@@ -24,12 +24,12 @@ export class AppError extends Error {
 type ErrorObject = { message: string; name?: string }
 
 export const errorResponse = (error: unknown): { error: ErrorObject; data: null } => {
-  if (error instanceof ZodError) {
-    return { error: { message: 'Validation Error', name: 'ZodError' }, data: null }
-  }
-
   if (error instanceof UserError || error instanceof AuthError || error instanceof AppError) {
     return { error: { message: error.message, name: error.name }, data: null }
+  }
+
+  if (error instanceof ZodError) {
+    return { error: { message: 'Validation Error', name: 'ZodError' }, data: null }
   }
 
   if (error instanceof Error) {

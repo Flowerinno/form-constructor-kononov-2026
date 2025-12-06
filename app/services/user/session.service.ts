@@ -4,24 +4,26 @@ import { TIME } from '~/core/constant'
 import { prisma } from '~/db.server'
 
 export const getUserSession = async (sessionId: string | undefined) => {
-  return await prisma.session.findUniqueOrThrow({
-    where: {
-      id: sessionId,
-      expiresAt: {
-        gt: new Date(),
+  try {
+    return await prisma.session.findUniqueOrThrow({
+      where: {
+        id: sessionId,
+        expiresAt: {
+          gt: new Date(),
+        },
+        expiredAt: null,
       },
-      expiredAt: null,
-    },
-    include: {
-      user: {
-        select: {
-          email: true,
-          name: true,
-          userId: true,
+      include: {
+        user: {
+          select: {
+            email: true,
+            name: true,
+            userId: true,
+          },
         },
       },
-    },
-  })
+    })
+  } catch (error) {}
 }
 
 export const destroyUserSession = async (session: Session) => {
@@ -35,7 +37,7 @@ export const destroyUserSession = async (session: Session) => {
   })
 }
 
-export const createUserSession = async (userId: number) => {
+export const createUserSession = async (userId: string) => {
   await invalidateUserSessions(userId)
 
   const session = await prisma.session.create({
@@ -51,9 +53,9 @@ export const createUserSession = async (userId: number) => {
           userId: true,
           email: true,
           name: true,
-        }
-      }
-    }
+        },
+      },
+    },
   })
 
   return {
@@ -64,7 +66,7 @@ export const createUserSession = async (userId: number) => {
   }
 }
 
-export const invalidateUserSessions = async (userId: number) => {
+export const invalidateUserSessions = async (userId: string) => {
   await prisma.session.updateMany({
     where: {
       userId,

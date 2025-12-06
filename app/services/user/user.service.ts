@@ -1,18 +1,18 @@
-import { EMAIL_TEMPLATES, TIME } from '~/core/constant'
+import crypto from 'crypto'
+import { TIME } from '~/core/constant'
 import { prisma } from '~/db.server'
 import type { SessionData } from '~/lib/session'
 import { generateAuthLink } from '~/lib/utils'
-import crypto from 'crypto'
-import { sendEmail } from '../mail/mail.service'
+import { checkExistingOtp } from '../auth/auth.service'
 
 export async function findUserByEmail(email: string) {
   return prisma.user.findUnique({ where: { email } })
 }
 
-export async function updateUser(id: number, data: { name: string }) {
+export async function updateUserName(userId: string, name: string) {
   return await prisma.user.update({
-    where: { id },
-    data,
+    where: { userId },
+    data: { name },
   })
 }
 
@@ -22,18 +22,24 @@ export async function createUser(email: string) {
   })
 }
 
-export const signIn = async (email: string): Promise<SessionData> => {
+export const signIn = async (email: string): Promise<SessionData | undefined> => {
   let user = await findUserByEmail(email)
 
   if (!user) {
     user = await createUser(email)
   }
 
+  const existingOtp = await checkExistingOtp(user.email)
+
+  if (existingOtp) {
+    return
+  }
+
   const { token } = await prisma.verificationToken.create({
     data: {
       expiresAt: new Date(Date.now() + TIME.TEN_MINUTES),
       token: crypto.randomBytes(32).toString('base64url'),
-      userId: user.id,
+      userId: user.userId,
     },
     select: { token: true },
   })

@@ -10,7 +10,7 @@ export const verifyOtp = async (token: string) => {
         expiredAt: null,
         expiresAt: {
           gt: new Date(),
-        }
+        },
       },
       include: {
         user: {
@@ -37,6 +37,23 @@ export const invalidateOtp = async (token: string) => {
     },
     data: {
       expiredAt: new Date(),
+    },
+  })
+}
+
+export const checkExistingOtp = async (email: string) => {
+  return await prisma.verificationToken.findFirst({
+    where: {
+      expiresAt: {
+        gt: new Date(),
+      },
+      expiredAt: null,
+      user: {
+        email,
+      },
+    },
+    select: {
+      expiresAt: true,
     },
   })
 }
