@@ -27,7 +27,7 @@ export function Heading({
           "text-base": level === 5,
           "text-sm": level === 6,
         },
-        "text-gray-900 dark:text-gray-100",
+        "text-gray-900 dark:text-gray-100 mb-2",
         className
       )}
       {...props}

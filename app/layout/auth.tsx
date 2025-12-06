@@ -12,7 +12,7 @@ export const middleware: Route.MiddlewareFunction[] = [authMiddleware]
 export const loader = async ({ request, context }: Route.LoaderArgs) => {
   const reqSession = await getSession(request.headers.get('Cookie'))
   try {
-    const user = context.get(userContext);
+    const user = context.get(userContext)
     invariant(user, 'User context is not set in Auth layout loader')
 
     return {
@@ -35,14 +35,14 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 const AuthLayout = () => {
   const data = useLoaderData<typeof loader>()
   return (
-    <div id="main-layout" className="flex min-h-full min-w-full relative">
+    <div id='main-layout' className='flex min-h-full min-w-full relative'>
       <SidebarProvider>
         <AppSidebar />
         <main className='flex flex-col min-h-full w-full'>
-        <SidebarTrigger className='mt-2 ml-2' />
-        <section className='p-4'>
-        <Outlet context={data.userData} />
-        </section>
+          <SidebarTrigger className='mt-2 ml-2' />
+          <section className='p-4'>
+            <Outlet context={data.userData} />
+          </section>
         </main>
       </SidebarProvider>
     </div>

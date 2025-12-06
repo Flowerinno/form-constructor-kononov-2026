@@ -1,6 +1,7 @@
 import { Form, useOutletContext } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
+import { Heading } from '~/components/ui/heading'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { logger } from '~/lib/logger'
@@ -39,7 +40,7 @@ export const Profile = () => {
   return (
     <>
       <div>
-        <p className='heading'>Profile information</p>
+        <Heading>Profile information</Heading>
         <Form onSubmitCapture={() => toast('Profile updated successfully')} method='POST' className='flex flex-col justify-end gap-4'>
           <input type='hidden' name='userId' value={userData.userId} />
           <div className='grid grid-cols-2'>
