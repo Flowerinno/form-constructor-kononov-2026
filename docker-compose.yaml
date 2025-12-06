@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 services:
   # app:
   #   build:
@@ -14,7 +14,7 @@ services:
   #     - postgres
   #     - task-minio
   postgres:
-    image: "postgres:latest"
+    image: 'postgres:latest'
     restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
