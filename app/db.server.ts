@@ -1,9 +1,9 @@
-import { PrismaClient } from "generated/prisma";
+import { PrismaClient } from 'generated/prisma/client'
 declare global {
-  var __prisma: PrismaClient;
+  var __prisma: PrismaClient
 }
 if (!global.__prisma) {
-  global.__prisma = new PrismaClient();
+  global.__prisma = new PrismaClient()
 }
-global.__prisma.$connect();
-export const prisma = global.__prisma;
+global.__prisma.$connect()
+export const prisma = global.__prisma

@@ -1,7 +1,11 @@
-import React from "react";
+import { useOutletContext } from 'react-router'
+import type { SessionData } from '~/lib/session'
 
 const DashboardIndex = () => {
-  return <div>DashboardIndex</div>;
-};
+  const data = useOutletContext<SessionData>()
 
-export default DashboardIndex;
+  console.log(data, 'outlet data in dashboard index')
+  return <div className='heading'>DashboardIndex</div>
+}
+
+export default DashboardIndex
