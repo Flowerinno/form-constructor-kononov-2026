@@ -25,4 +25,3 @@ export const authMiddleware = async ({ request, context }: Route.LoaderArgs) => 
     sessionId: userSession.id,
   })
 }
-

@@ -33,7 +33,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
     }
 
     const maybeUserSession = await getUserSession(session.get('sessionId'))
-
     if (maybeUserSession) {
       throw redirect(ROUTES.DASHBOARD)
     }
@@ -67,17 +66,19 @@ export default function AuthWrapper() {
         />
         <Heading className='text-center'>Sign in to your account</Heading>
 
-        <Paragraph className='text-center'>{actionData?.data?.message ? actionData.data.message : null}</Paragraph>
+        <Paragraph className='text-center'>
+          {actionData?.data?.message ? actionData.data.message : null}
+        </Paragraph>
 
-        <Paragraph className='text-center'>{loaderData.error ? loaderData.error.message : null}</Paragraph>
+        <Paragraph className='text-center'>
+          {loaderData.error ? loaderData.error.message : null}
+        </Paragraph>
       </div>
 
       <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
         <Form method='POST' className='space-y-6'>
           <div>
-            <Label htmlFor='email'>
-              Email address
-            </Label>
+            <Label htmlFor='email'>Email address</Label>
             <div className='mt-2'>
               <Input
                 id='email'
@@ -92,7 +93,7 @@ export default function AuthWrapper() {
           </div>
           <div>
             <Button type='submit' variant={'default'} className='w-full'>
-              Let's create
+              Let&apos;s create
             </Button>
           </div>
         </Form>

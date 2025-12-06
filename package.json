@@ -7,7 +7,7 @@
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",
-    "lint": "npx eslint --fix ./app/**/*.{ts,tsx,js}",
+    "lint": "npx eslint --fix ./app/**/*.{ts,tsx}",
     "fmt": "npx prettier --write ./app/**/*.{ts,tsx,js,json,css,md}"
   },
   "dependencies": {
