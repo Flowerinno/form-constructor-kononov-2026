@@ -1,10 +1,20 @@
-import { isRouteErrorResponse, Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
+import {
+  isRouteErrorResponse,
+  Link,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from 'react-router'
 
-import { SunIcon } from 'lucide-react';
-import { useState } from 'react';
-import type { Route } from './+types/root';
-import './app.css';
-import { Toaster } from './components/ui/sonner';
+import { SunIcon } from 'lucide-react'
+import { useState } from 'react'
+import type { Route } from './+types/root'
+import './app.css'
+import { Button } from './components/ui/button'
+import { Toaster } from './components/ui/sonner'
+import { ROUTES } from './routes'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -20,7 +30,7 @@ export const links: Route.LinksFunction = () => [
 ]
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('dark')
   return (
     <html lang='en' className={theme}>
       <head>
@@ -30,7 +40,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body className='relative'>
-        <SunIcon className="absolute z-10 top-4 right-4 cursor-pointer dark:text-white hover:text-purple-400 transition-all duration-150" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} />
+        <SunIcon
+          className='absolute z-10 top-4 right-4 cursor-pointer dark:text-white hover:text-purple-400 transition-all duration-150'
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        />
         {children}
         <Toaster position='top-right' duration={3000} />
         <ScrollRestoration />
@@ -67,6 +80,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           <code>{stack}</code>
         </pre>
       )}
+      <Link to={ROUTES.DASHBOARD}>
+        <Button>Go home</Button>
+      </Link>
     </main>
   )
 }

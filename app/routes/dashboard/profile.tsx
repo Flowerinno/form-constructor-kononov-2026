@@ -7,7 +7,7 @@ import { Label } from '~/components/ui/label'
 import { logger } from '~/lib/logger'
 import { commitSession, getSession, setSessionData, type SessionData } from '~/lib/session'
 import { updateUserName } from '~/services/user/user.service'
-import { profileSchema } from '~/validation/auth'
+import { profileSchema } from '~/validation/user'
 import type { Route } from './+types/profile'
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -40,8 +40,12 @@ export const Profile = () => {
   return (
     <>
       <div>
-        <Heading>Profile information</Heading>
-        <Form onSubmitCapture={() => toast('Profile updated successfully')} method='POST' className='flex flex-col justify-end gap-4'>
+        <Heading>Profile Information</Heading>
+        <Form
+          onSubmitCapture={() => toast('Profile updated successfully')}
+          method='POST'
+          className='flex flex-col justify-end gap-4'
+        >
           <input type='hidden' name='userId' value={userData.userId} />
           <div className='grid grid-cols-2'>
             <Label htmlFor='name'>Name</Label>
@@ -55,7 +59,7 @@ export const Profile = () => {
           <div className='grid grid-cols-2'>
             <Label htmlFor='email'>Email Address</Label>
             <Input
-            disabled
+              disabled
               id='email'
               name='email'
               defaultValue={userData.email}

@@ -13,10 +13,13 @@ export default [
       route('form/:formId/submissions', 'routes/dashboard/form-submissions.tsx'),
       route('form/:formId/submission/:submissionId', 'routes/dashboard/form-submission.tsx'),
       route('statistics', 'routes/dashboard/statistics.tsx'),
+      route('logout', 'routes/dashboard/logout.ts'),
     ]),
   ]),
 
-  route('logout', 'routes/logout.ts'),
+  // API
+  ...prefix('api', [route('form/create', 'routes/api/form.create.ts')]),
+
   route('submit/:formId', 'routes/submit-form.tsx'),
   route('thank-you', 'routes/thank-you.tsx'),
 ] satisfies RouteConfig
@@ -32,7 +35,10 @@ export const ROUTES = {
   DASHBOARD_FORM_SUBMISSION: (formId: string, submissionId: string) =>
     `/dashboard/form/${formId}/submission/${submissionId}`,
   DASHBOARD_STATISTICS: '/dashboard/statistics',
-  LOGOUT: '/logout',
+  LOGOUT: '/dashboard/logout',
+
+  //API
+  API_FORM_CREATE: '/api/form/create',
 
   // USER FACING
   SUBMIT_FORM: (formId: string) => `/submit/${formId}`,
