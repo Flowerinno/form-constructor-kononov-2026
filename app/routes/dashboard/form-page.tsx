@@ -1,6 +1,14 @@
-import { ArrowLeft, CheckIcon, LinkIcon } from 'lucide-react'
+import { ArrowLeft, CheckIcon, LinkIcon, TrashIcon } from 'lucide-react'
 import { Suspense } from 'react'
-import { Await, Form, Link, UNSAFE_invariant, useLoaderData, useParams } from 'react-router'
+import {
+  Await,
+  Form,
+  Link,
+  UNSAFE_invariant,
+  useLoaderData,
+  useParams,
+  useSubmit,
+} from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
@@ -25,8 +33,28 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
 
 const FormEdit = () => {
   const loaderData = useLoaderData<typeof loader>()
+  const submit = useSubmit()
   const { formId = '', pageId = '' } = useParams<{ formId: string; pageId: string }>()
   const page = loaderData.data.page
+
+  const onDeletePage = async () => {
+    const agree = confirm(
+      'Are you sure you want to delete this page? This action cannot be undone.',
+    )
+    const formData = new FormData()
+    formData.append('formId', formId)
+    formData.append('pageId', pageId)
+
+    if (agree) {
+      submit(formData, {
+        method: 'DELETE',
+        action: ROUTES.API_FORM_PAGE_DELETE,
+        navigate: true,
+        viewTransition: true,
+      })
+      toast.success('Page deleted successfully')
+    }
+  }
 
   return (
     <div>
@@ -58,10 +86,20 @@ const FormEdit = () => {
                       className='text-2xl w-full'
                       defaultValue={page?.title ? page.title : `Page ${page.pageNumber}`}
                     />
-
                     <Button type='submit' variant={'outline'}>
                       <CheckIcon />
                     </Button>
+
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button variant={'outline'} onClick={onDeletePage}>
+                          <TrashIcon />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete page</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </Form>
 
                   <Tooltip>
@@ -83,7 +121,6 @@ const FormEdit = () => {
                       <p>Preview Page</p>
                     </TooltipContent>
                   </Tooltip>
-                  <Tooltip></Tooltip>
                 </div>
                 <FormEditor
                   page={page}
