@@ -546,11 +546,16 @@ export function useConfig({
       render: ({ children, pageMaxWidth, alignment, puck }: RootProps) => {
         const { formId, pageId, isPreview, page, pagesTotal, theme } = puck.metadata
         const isLastStep = page.pageNumber === pagesTotal
-
+        console.log({
+          isLastStep,
+          pageNumber: page.pageNumber,
+          pagesTotal,
+          pageFields: page.pageFields,
+        })
         let buttonText = 'Next'
         let action: string | undefined = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_NEXT
 
-        if (!isPreview && isLastStep) {
+        if (isLastStep) {
           action = ROUTES.API_FORM_SUBMISSIONS_SUBMIT
           buttonText = 'Submit'
         }

@@ -10,7 +10,7 @@ import { useConfig } from './useConfig'
 
 export type RootProps = {
   children: React.ReactNode
-  theme?: 'light' | 'dark'
+  theme: 'LIGHT' | 'DARK'
   pageMaxWidth?: number
   puck: PuckContext
 }
@@ -24,7 +24,27 @@ type FormEditorProps = {
   theme: Form['theme']
 }
 
-const initialData = {}
+const initialData = {
+  content: [
+    {
+      type: 'HeadingBlock',
+      props: {
+        id: 'HeadingBlock-' + crypto.randomUUID(),
+        text: 'Welcome to the Form Editor!',
+        level: '2',
+      },
+    },
+    {
+      type: 'DescriptionBlock',
+      props: {
+        id: 'DescriptionBlock-' + crypto.randomUUID(),
+        text: 'Start building your form by adding new fields and components.',
+      },
+    },
+  ],
+  root: { props: { pageMaxWidth: 1200, alignment: 'center' } },
+  zones: {},
+}
 
 export function FormEditor({
   formId,

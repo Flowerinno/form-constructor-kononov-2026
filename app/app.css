@@ -207,7 +207,7 @@
 }
 
 .puck-root > div {
-  width: 100%;
+  min-width: 300px;
   height: auto;
   display: flex;
   flex-flow: column;

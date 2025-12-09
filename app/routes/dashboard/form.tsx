@@ -1,4 +1,4 @@
-import { CopyIcon, PlusIcon } from 'lucide-react'
+import { CopyIcon, PlusIcon, TrashIcon, ZapIcon, ZapOffIcon } from 'lucide-react'
 import { Suspense } from 'react'
 import {
   Await,
@@ -37,7 +37,7 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
 
-  const form = await getFormById(formId, userData.userId)
+  const form = await getFormById(formId)
   return customResponse({ form })
 }
 
@@ -68,10 +68,54 @@ export default function Form() {
     submit(formData, { method: 'POST', action: ROUTES.API_FORM_THEME_UPDATE, navigate: false })
     toast.success('Form theme updated to ' + theme)
   }
-  console.log('Current Form:', currentForm)
+
+  const onFormDelete = () => {
+    const agree = confirm(
+      'Are you sure you want to delete this form? This action cannot be undone.',
+    )
+    const formData = new FormData()
+    formData.append('formId', currentForm.formId)
+
+    if (agree) {
+      submit(formData, {
+        method: 'DELETE',
+        action: ROUTES.API_FORM_DELETE,
+        navigate: true,
+        viewTransition: true,
+      })
+      toast.success('Form deleted successfully')
+    }
+  }
+
+  const togglePublish = () => {
+    const confirmMessage = currentForm.publishedAt
+      ? 'Are you sure you want to unpublish this form? It will no longer be accessible to participants.'
+      : 'Are you sure you want to publish this form? It will be accessible to participants.'
+
+    const approved = confirm(confirmMessage)
+    const formData = new FormData()
+    formData.append('formId', currentForm.formId)
+
+    if (currentForm.pages.some((page) => !page.pageFields)) {
+      toast.error(
+        'Cannot publish a form with incomplete pages. Please complete all pages before publishing.',
+      )
+      return
+    }
+
+    if (approved && currentForm.pages.length > 0) {
+      submit(formData, {
+        method: 'POST',
+        action: ROUTES.API_FORM_TOGGLE_PUBLISH,
+        navigate: false,
+      })
+      toast.success(`Form ${currentForm.publishedAt ? 'unpublished' : 'published'} successfully`)
+    }
+  }
+
   return (
     <div>
-      <Heading className='flex gap-2 items-center'>
+      <Heading className='flex flex-wrap gap-2 items-center'>
         {currentForm.title}{' '}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -104,6 +148,30 @@ export default function Form() {
             <p>Copy Link</p>
           </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={onFormDelete} size={'icon-sm'} className='mt-1'>
+              <TrashIcon />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Delete form</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button onClick={togglePublish} size={'icon-sm'} className='mt-1'>
+              {currentForm.publishedAt ? (
+                <ZapIcon className='text-green-400' />
+              ) : (
+                <ZapOffIcon className='text-red-400' />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{currentForm.publishedAt ? 'Unpublish form' : 'Publish form'}</p>
+          </TooltipContent>
+        </Tooltip>
         <Select
           name='theme'
           defaultValue={currentForm.theme}
@@ -130,7 +198,7 @@ export default function Form() {
       )}
       <Suspense fallback={<Spinner />}>
         <Await resolve={currentForm}>
-          <div className='grid grid-cols-2 gap-4 mt-12'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12'>
             {currentForm &&
               currentForm.pages.map((page) => (
                 <Link
@@ -138,7 +206,7 @@ export default function Form() {
                   to={ROUTES.DASHBOARD_FORM_PAGE(currentForm.formId, page.pageId)}
                   key={page.id}
                   className={cn(
-                    'mb-8 border relative min-h-[150px]',
+                    'mb-8 border relative min-h-[150px] w-full min-w-[350px]',
                     !page.pageFields && 'bg-muted',
                   )}
                 >
@@ -152,6 +220,7 @@ export default function Form() {
                       page={page}
                       pagesTotal={currentForm.pagesTotal}
                       theme={currentForm.theme}
+                      isPreview={true}
                     />
                   )}
                 </Link>

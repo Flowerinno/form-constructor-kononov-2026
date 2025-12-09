@@ -45,9 +45,28 @@ export const updatePageGeneral = z.object({
     .max(100, 'Page name must be at most 100 characters long'),
 })
 
+export const deletePageSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+  pageId: z.string().min(1, 'Page ID is required'),
+})
+
+export const deleteFormSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+})
+
+export const toggleFormSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+})
+
 export type CreateFormSchema = z.infer<typeof createFormSchema>
 
-export const validateSubmissionPayload = (data: FormData) => {
-  try {
-  } catch (error) {}
-}
+// export const validateSubmissionPayload = (data: FormData) => {
+//   try {
+//   } catch (error) {}
+// }
+
+// USER FACING
+
+export const entryFormSubmission = z.object({
+  email: z.email('Invalid email address'),
+})

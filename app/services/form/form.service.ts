@@ -34,11 +34,10 @@ export const createUserForm = async (formData: CreateFormSchema, userId: string)
   })
 }
 
-export const getFormById = async (formId: string, userId: string) => {
+export const getFormById = async (formId: string) => {
   return await prisma.form.findUnique({
     where: {
       formId,
-      creatorId: userId,
     },
     include: {
       pages: {
@@ -86,5 +85,57 @@ export const createFormPage = async (formId: string) => {
         },
       },
     })
+  })
+}
+
+export const toggleFormPublish = async (formId: string) => {
+  const form = await prisma.form.findUniqueOrThrow({
+    where: { formId },
+    include: {
+      pages: {
+        select: {
+          pageFields: true,
+        },
+      },
+    },
+  })
+
+  if (!form.publishedAt && form.pagesTotal === 0) {
+    throw new Error('Cannot publish a form with no pages')
+  }
+
+  if (!form.publishedAt && form.pages.some((page) => !page.pageFields)) {
+    throw new Error('Cannot publish a form with empty pages')
+  }
+
+  const publishedAt = form.publishedAt ? null : new Date()
+  return await prisma.form.update({
+    where: { formId },
+    data: {
+      publishedAt,
+    },
+    select: {
+      publishedAt: true,
+    },
+  })
+}
+
+// form flow
+
+export const getFormFirstPage = async (formId: string) => {
+  return await prisma.page.findFirst({
+    where: {
+      formId,
+      pageNumber: 1,
+    },
+  })
+}
+
+export const getNextFormPage = async (formId: string, currentPageNumber: number) => {
+  return await prisma.page.findFirst({
+    where: {
+      formId,
+      pageNumber: currentPageNumber + 1,
+    },
   })
 }
