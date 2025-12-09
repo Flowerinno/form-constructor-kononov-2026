@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -58,7 +59,9 @@ const DashboardIndex = () => {
                   <Label htmlFor='description'>Description</Label>
                   <Input id='description' name='description' />
                 </div>
-                <Button type='submit'>Create</Button>
+                <DialogClose asChild>
+                  <Button type='submit'>Create</Button>
+                </DialogClose>
               </Form>
             </DialogHeader>
           </DialogContent>
@@ -71,6 +74,7 @@ const DashboardIndex = () => {
       <div className='grid grid-cols-2 gap-4'>
         {loaderData.data.forms.map((form) => (
           <Link
+            viewTransition
             to={ROUTES.DASHBOARD_FORM(form.formId)}
             key={form.formId}
             className='p-4 border rounded-md'

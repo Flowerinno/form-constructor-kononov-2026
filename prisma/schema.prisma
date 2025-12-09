@@ -42,23 +42,27 @@ model Form {
   description     String?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  publishedAt     DateTime?
   formSubmissions FormSubmission[]
   creatorId       String
   creator         User             @relation(fields: [creatorId], references: [userId])
   formAnswers     FormAnswer[]
   pages           Page[]
-  pagesTotal      Int              @default(1)
+  pagesTotal      Int              @default(0)
+  theme           FormTheme        @default(DARK)
 
-  @@index([title, createdAt, creatorId])
+  @@index([title, createdAt, creatorId, publishedAt])
 }
 
 model Page {
   id         Int         @id @default(autoincrement())
+  title      String?
   pageId     String      @unique @default(cuid())
-  formId     Int
-  form       Form        @relation(fields: [formId], references: [id])
+  formId     String
+  form       Form        @relation(fields: [formId], references: [formId])
   formFields FormField[]
   pageNumber Int
+  pageFields Json?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
@@ -120,13 +124,13 @@ model Session {
 }
 
 model VerificationToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  token     String    @unique
   expiresAt DateTime
   expiredAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [userId])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [userId])
   userId    String
 
   @@index([userId])
@@ -143,4 +147,9 @@ enum FormFieldType {
   PARAGRAPH
   HEADER
   LINK
+}
+
+enum FormTheme {
+  LIGHT
+  DARK
 }

@@ -3,7 +3,7 @@ import { customResponse } from '~/lib/response'
 import { authMiddleware, userContext } from '~/middleware/auth'
 import { createUserForm } from '~/services/form/form.service'
 import { createFormSchema } from '~/validation/form'
-import type { Route } from './+types/form.create'
+import type { Route } from './+types/create'
 
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware]
 

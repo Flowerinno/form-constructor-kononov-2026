@@ -1,7 +1,7 @@
 import crypto from 'crypto'
 import type { Session } from 'react-router'
 import { TIME } from '~/core/constant'
-import { prisma } from '~/db.server'
+import { prisma } from '~/db'
 
 export const getUserSession = async (sessionId: string | undefined) => {
   try {

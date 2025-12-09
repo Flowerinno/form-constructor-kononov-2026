@@ -1,4 +1,4 @@
-import { prisma } from '~/db.server'
+import { prisma } from '~/db'
 import type { CreateFormSchema } from '~/validation/form'
 
 export const getUserForms = async (userId: string) => {
@@ -40,5 +40,51 @@ export const getFormById = async (formId: string, userId: string) => {
       formId,
       creatorId: userId,
     },
+    include: {
+      pages: {
+        orderBy: {
+          pageNumber: 'asc',
+        },
+      },
+    },
+  })
+}
+
+export const getFormPage = async (pageId: string, formId: string) => {
+  return await prisma.page.findFirst({
+    where: {
+      pageId,
+      formId,
+    },
+    include: {
+      form: {
+        select: {
+          pagesTotal: true,
+          theme: true,
+        },
+      },
+    },
+  })
+}
+
+export const createFormPage = async (formId: string) => {
+  return prisma.$transaction(async (ts) => {
+    const pagesCount = await ts.page.count({
+      where: { formId },
+    })
+
+    return await ts.form.update({
+      where: { formId },
+      data: {
+        pagesTotal: {
+          increment: 1,
+        },
+        pages: {
+          create: {
+            pageNumber: pagesCount === 0 ? 1 : pagesCount + 1,
+          },
+        },
+      },
+    })
   })
 }
