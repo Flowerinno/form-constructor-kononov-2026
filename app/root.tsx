@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   isRouteErrorResponse,
   Link,
@@ -6,6 +7,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from 'react-router'
 
 import { SunIcon } from 'lucide-react'
@@ -15,6 +17,7 @@ import './app.css'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 import { ROUTES } from './routes'
+import { cn } from './lib/utils'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -31,19 +34,23 @@ export const links: Route.LinksFunction = () => [
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState('dark')
+  const location = useLocation()
+  const isToggleVisible = location.pathname.includes(ROUTES.DASHBOARD)
   return (
-    <html lang='en' className={theme}>
+    <html lang='en' className={cn(theme, 'h-full min-h-full')}>
       <head>
         <meta charSet='utf-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1' />
         <Meta />
         <Links />
       </head>
-      <body className='relative'>
-        <SunIcon
-          className='absolute z-10 top-4 right-4 cursor-pointer dark:text-white hover:text-purple-400 transition-all duration-150'
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        />
+      <body className='relative h-full'>
+        {isToggleVisible && (
+          <SunIcon
+            className='absolute z-10 top-4 right-4 cursor-pointer dark:text-white hover:text-purple-400 transition-all duration-150'
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          />
+        )}
         {children}
         <Toaster position='top-right' duration={3000} />
         <ScrollRestoration />
@@ -80,7 +87,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           <code>{stack}</code>
         </pre>
       )}
-      <Link to={ROUTES.DASHBOARD}>
+      <Link viewTransition to={ROUTES.DASHBOARD}>
         <Button>Go home</Button>
       </Link>
     </main>

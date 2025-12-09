@@ -1,4 +1,4 @@
-import { prisma } from '~/db.server'
+import { prisma } from '~/db'
 import { logger } from '~/lib/logger'
 import { AuthError } from '~/lib/response'
 

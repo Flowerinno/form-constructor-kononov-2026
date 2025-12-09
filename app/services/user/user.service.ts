@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import { TIME } from '~/core/constant'
-import { prisma } from '~/db.server'
+import { prisma } from '~/db'
 import type { SessionData } from '~/lib/session'
 import { generateAuthLink } from '~/lib/utils'
 import { checkExistingOtp } from '../auth/auth.service'
