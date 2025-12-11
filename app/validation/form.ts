@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { FormDefaultType } from '~/core/editor/types'
 import { ComponentsEnum } from '~/core/editor/useConfig'
 
 export const createFormSchema = z.object({
@@ -60,13 +61,94 @@ export const toggleFormSchema = z.object({
 
 export type CreateFormSchema = z.infer<typeof createFormSchema>
 
-// export const validateSubmissionPayload = (data: FormData) => {
-//   try {
-//   } catch (error) {}
-// }
-
-// USER FACING
-
 export const entryFormSubmission = z.object({
   email: z.email('Invalid email address'),
 })
+
+export const buildZodSchema = (pageFields: FormDefaultType) => {
+  const schemaFields: Record<string, z.ZodTypeAny> = {
+    participantId: z.string().min(1, 'Participant ID is required'),
+    formId: z.string().min(1, 'Form ID is required'),
+    pageId: z.string().min(1, 'Page ID is required'),
+  }
+
+  for (const component of pageFields.content) {
+    const { type, props } = component
+    const fieldId = props.id
+
+    if (!fieldId || !type.endsWith('Field')) {
+      continue
+    }
+
+    let fieldSchema = null
+
+    switch (type) {
+      case 'TextInputField':
+      case 'TextareaField':
+        // case 'FileField': check file handling by looking at s3 uploads by id
+        fieldSchema = z.string()
+
+        if (props?.required && props.required === true) {
+          fieldSchema = fieldSchema.min(1, `${props.label} is required.`)
+        }
+
+        schemaFields[fieldId] = fieldSchema
+        break
+
+      case 'SelectField':
+        if (!props.options || props.options.length === 0) {
+          throw new Error(`SelectField with id ${fieldId} has no options defined.`)
+        }
+        console.log('SelectField options:', props.options)
+        const allowedSelectValues = props.options.map((opt) => opt.value)
+
+        fieldSchema = z.enum(allowedSelectValues, {
+          error: () => `Provided invalid option for ${props.label}`,
+        })
+
+        if (props?.required && props.required === true) {
+          console.log('SelectField is required:', props.label)
+          fieldSchema = fieldSchema.refine((val) => val !== '', {
+            message: `${props.label} is required.`,
+          })
+        }
+        schemaFields[fieldId] = fieldSchema
+        break
+      case 'RadioGroupField':
+        if (!props.options || props.options.length === 0) {
+          throw new Error(`RadioGroupField with id ${fieldId} has no options defined.`)
+        }
+
+        const radioValues = props.options.map((opt) => opt.value)
+        fieldSchema = z.enum(radioValues, {
+          error: `Provided invalid option for ${props.label}`,
+        })
+
+        if (props?.required && props.required === true) {
+          fieldSchema = fieldSchema.refine((val) => val !== '', {
+            message: `${props.label} is required.`,
+          })
+        }
+        schemaFields[fieldId] = fieldSchema
+        break
+      case 'CheckboxField':
+        fieldSchema = z.transform((val) => {
+          if (val === 'on') return true
+          return false
+        })
+
+        if (props?.required && props.required === true) {
+          fieldSchema = fieldSchema.refine((val) => val === true, {
+            message: `You must accept ${props.label}.`,
+          })
+        }
+        schemaFields[fieldId] = fieldSchema
+        break
+      default:
+        console.warn(`Skipping field type: ${type} for field ID: ${fieldId}`)
+        continue
+    }
+  }
+
+  return z.object(schemaFields).loose()
+}

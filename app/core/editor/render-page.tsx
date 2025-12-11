@@ -5,6 +5,7 @@ import { useConfig } from './useConfig'
 type RenderPageProps = {
   formId: string
   pageId: string
+  participantId: string | null
   isPreview?: boolean
   page: Page
   pagesTotal: number
@@ -19,6 +20,7 @@ const RenderPage = (props: RenderPageProps) => {
     page: props.page,
     pagesTotal: props.pagesTotal,
     theme: props.theme,
+    participantId: props.participantId,
   }
   const config = useConfig(objectToPass)
   return (

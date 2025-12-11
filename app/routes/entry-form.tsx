@@ -28,7 +28,6 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   const firstPage = form.pages.find((page) => page.pageNumber === 1)
   UNSAFE_invariant(firstPage, 'First page not found - not valid form configuration')
 
-  const redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageId)
   let participant = await getFormParticipantByEmail(email, params.formId)
 
   if (!participant) {
@@ -38,7 +37,9 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     // const latestAnsweredPage = participant.formAnswers.find(answer => answer)
   }
 
-  throw redirect(redirectURL)
+  const redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageId, participant.participantId)
+
+  throw redirect(redirectURL + '?participantId=' + participant.participantId)
 }
 
 const EntryForm = () => {
