@@ -10,6 +10,7 @@ import {
   useSubmit,
 } from 'react-router'
 import { toast } from 'sonner'
+import { Spinner } from '~/components/app-ui/loading'
 import { Button } from '~/components/ui/button'
 import { Heading } from '~/components/ui/heading'
 import { Paragraph } from '~/components/ui/paragraph'
@@ -23,7 +24,6 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Spinner } from '~/core/components/loading'
 import { RenderPage } from '~/core/editor/render-page'
 import { customResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'

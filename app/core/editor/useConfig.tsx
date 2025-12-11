@@ -1,7 +1,7 @@
 import { type Config, type PuckContext } from '@measured/puck'
 import type { Form as DBForm, Page } from 'generated/prisma/client'
-import React from 'react'
-import { Form } from 'react-router'
+import React, { useEffect } from 'react'
+import { useFetcher } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Heading } from '~/components/ui/heading'
@@ -39,29 +39,26 @@ type Components = {
     variant: 'default' | 'destructive' | 'outline'
     alignment: 'left' | 'center' | 'right'
   }
-  TextInputField: { label: string; name: string; placeholder: string; required: boolean }
+  TextInputField: { label: string; placeholder: string; required: boolean }
   TextareaField: {
     label: string
-    name: string
     placeholder: string
     required: boolean
     rows: number
   }
   SelectField: {
     label: string
-    name: string
     options: { value: string; label: string }[]
     placeholder: string
     required: boolean
   }
   RadioGroupField: {
     label: string
-    name: string
     options: { value: string; label: string }[]
     required: boolean
   }
-  CheckboxField: { label: string; name: string; defaultChecked: boolean }
-  FileField: { label: string; name: string; accept: string; multiple: boolean; required: boolean }
+  CheckboxField: { label: string; required: boolean; defaultChecked: boolean }
+  FileField: { label: string; accept: string; multiple: boolean; required: boolean }
   HeadingBlock: { level: '1' | '2' | '3'; text: string }
   DescriptionBlock: { text: string }
   TwoColumnLayout: {
@@ -73,6 +70,7 @@ type Components = {
 export type ConfigProps = {
   formId: string
   pageId: string
+  participantId: string | null
   isPreview?: boolean
   page: Page
   pagesTotal: number
@@ -86,17 +84,44 @@ export type RootProps = {
   puck: PuckContext
 }
 
+type ResponseError =
+  | {
+      message: string
+      errors: { id: string; message: string }[]
+    }
+  | undefined
+
 const getTextColor = (theme: 'LIGHT' | 'DARK' | undefined) => {
   return theme === 'LIGHT' ? '#0a0a0a' : '#fafafa'
+}
+
+const isFormError = (data: ResponseError, id: string) => {
+  const error = data?.errors.find((e) => e.id === id)
+  if (error) {
+    return <span className='text-red-500'>{error.message}</span>
+  }
+  return null
 }
 
 export function useConfig({
   formId,
   pageId,
+  participantId = null,
   isPreview = false,
   page,
   pagesTotal,
 }: ConfigProps): Config<Components, RootProps> {
+  const fetcher = useFetcher()
+  const data = fetcher.data as ResponseError
+
+  useEffect(() => {
+    if (data && data?.errors) {
+      console.log('Form submission errors:', data.errors)
+    } else {
+      console.log('Form submitted successfully')
+    }
+  }, [data])
+
   return {
     components: {
       ButtonBlock: {
@@ -138,7 +163,6 @@ export function useConfig({
         label: 'Text input',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           placeholder: { type: 'text', label: 'Placeholder' },
           required: {
             type: 'select',
@@ -151,27 +175,26 @@ export function useConfig({
         },
         defaultProps: {
           label: 'Text field',
-          name: 'text_field',
           placeholder: '',
           required: false,
         },
-        render: ({ label, name, placeholder, required, puck }) => (
+        render: ({ label, id, placeholder, required, puck }) => (
           <div className='space-y-1'>
             <Label
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
-              htmlFor={name}
+              htmlFor={id}
             >
               {label}
-              {required ? ' *' : ''}
+              {required ? ' *' : ''} {data && isFormError(data, id)}
             </Label>
             <Input
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
-              id={name}
-              name={name}
+              id={id}
+              name={id}
               placeholder={placeholder}
               required={required}
             />
@@ -182,7 +205,6 @@ export function useConfig({
         label: 'Textarea',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           placeholder: { type: 'text', label: 'Placeholder' },
           rows: { type: 'number', label: 'Rows', min: 2, max: 20 },
           required: {
@@ -196,25 +218,24 @@ export function useConfig({
         },
         defaultProps: {
           label: 'Textarea',
-          name: 'textarea_field',
           placeholder: '',
           required: false,
           rows: 4,
         },
-        render: ({ label, name, placeholder, required, rows, puck }) => (
+        render: ({ label, id, placeholder, required, rows, puck }) => (
           <div className='space-y-1'>
             <Label
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
-              htmlFor={name}
+              htmlFor={id}
             >
               {label}
-              {required ? ' *' : ''}
+              {required ? ' *' : ''} {data && isFormError(data, id)}
             </Label>
             <Textarea
-              id={name}
-              name={name}
+              id={id}
+              name={id}
               placeholder={placeholder}
               required={required}
               rows={rows}
@@ -229,7 +250,6 @@ export function useConfig({
         label: 'Select',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           placeholder: { type: 'text', label: 'Placeholder' },
           options: {
             type: 'array',
@@ -251,7 +271,6 @@ export function useConfig({
         },
         defaultProps: {
           label: 'Select field',
-          name: 'select_field',
           placeholder: 'Select an option',
           options: [
             {
@@ -265,24 +284,24 @@ export function useConfig({
           ],
           required: false,
         },
-        render: ({ label, name, placeholder, options, required, puck }) => {
+        render: ({ label, id, placeholder, options, required, puck }) => {
           return (
             <div className='space-y-1'>
               <Label
                 style={{
                   color: getTextColor(puck.metadata.theme),
                 }}
-                htmlFor={name}
+                htmlFor={id}
               >
                 {label}
                 {required ? ' *' : ''}
+                {data && isFormError(data, id)}
               </Label>
-              <Select name={name}>
+              <Select required={required} name={id}>
                 <SelectTrigger
                   style={{
                     color: getTextColor(puck.metadata.theme),
                   }}
-                  id={name}
                 >
                   <SelectValue placeholder={placeholder} />
                 </SelectTrigger>
@@ -314,7 +333,6 @@ export function useConfig({
         label: 'Radio group',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           options: {
             type: 'array',
             label: 'Options (one per line, value|label)',
@@ -335,7 +353,6 @@ export function useConfig({
         },
         defaultProps: {
           label: 'Radio group',
-          name: 'radio_group',
           options: [
             {
               value: 'option1',
@@ -345,7 +362,7 @@ export function useConfig({
           ],
           required: false,
         },
-        render: ({ label, name, options, required, puck }) => {
+        render: ({ label, id, options, required, puck }) => {
           return (
             <div className='space-y-2'>
               <Label
@@ -355,16 +372,17 @@ export function useConfig({
               >
                 {label}
                 {required ? ' *' : ''}
+                {data && isFormError(data, id)}
               </Label>
-              <RadioGroup name={name}>
+              <RadioGroup required={required} name={id}>
                 {options.map((opt) => (
                   <div key={opt.value} className='flex items-center space-x-2'>
-                    <RadioGroupItem id={`${name}-${opt.value}`} value={opt.value} />
+                    <RadioGroupItem id={`${id}-${opt.value}`} value={opt.value} />
                     <Label
                       style={{
                         color: getTextColor(puck.metadata.theme),
                       }}
-                      htmlFor={`${name}-${opt.value}`}
+                      htmlFor={`${id}-${opt.value}`}
                     >
                       {opt.label}
                     </Label>
@@ -379,7 +397,6 @@ export function useConfig({
         label: 'Checkbox',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           defaultChecked: {
             type: 'select',
             options: [
@@ -388,29 +405,38 @@ export function useConfig({
             ],
             label: 'Checked by default',
           },
+          required: {
+            type: 'select',
+            label: 'Required',
+            options: [
+              { label: 'Yes', value: true },
+              { label: 'No', value: false },
+            ],
+          },
         },
         defaultProps: {
           label: 'Accept terms',
-          name: 'accept_terms',
           defaultChecked: false,
+          required: false,
         },
-        render: ({ label, name, defaultChecked, puck }) => (
+        render: ({ label, defaultChecked, required, puck, id }) => (
           <div className='flex items-center space-x-2'>
             <Checkbox
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
-              id={name}
-              name={name}
+              id={id}
+              name={id}
+              required={required}
               defaultChecked={defaultChecked}
             />
             <Label
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
-              htmlFor={name}
+              htmlFor={id}
             >
-              {label}
+              {label} {required ? ' *' : ''} {data && isFormError(data, id)}
             </Label>
           </div>
         ),
@@ -419,7 +445,6 @@ export function useConfig({
         label: 'File upload',
         fields: {
           label: { type: 'text', label: 'Label' },
-          name: { type: 'text', label: 'Field name' },
           accept: { type: 'text', label: 'Accept (e.g. image/*,application/pdf)' },
           multiple: {
             type: 'select',
@@ -440,36 +465,38 @@ export function useConfig({
         },
         defaultProps: {
           label: 'Upload file',
-          name: 'file_field',
-          accept: '',
+          accept: 'image/*,application/pdf',
           multiple: false,
           required: false,
         },
-        render: ({ label, name, accept, multiple, required, puck }) => (
-          <div className='space-y-1'>
-            <Label
-              htmlFor={name}
-              style={{
-                color: getTextColor(puck.metadata.theme),
-              }}
-            >
-              {label}
-              {required ? ' *' : ''}
-            </Label>
-            <Input
-              id={name}
-              name={name}
-              type='file'
-              accept={accept || undefined}
-              multiple={multiple}
-              required={required}
-              style={{
-                color: getTextColor(puck.metadata.theme),
-                maxWidth: '400px',
-              }}
-            />
-          </div>
-        ),
+        render: ({ label, accept, multiple, required, puck, id }) => {
+          return (
+            <div className='space-y-1'>
+              <Label
+                htmlFor={id}
+                style={{
+                  color: getTextColor(puck.metadata.theme),
+                }}
+              >
+                {label}
+                {required ? ' *' : ''}
+                {data && isFormError(data, id)}
+              </Label>
+              <Input
+                id={id}
+                name={id}
+                type='file'
+                accept={accept || undefined}
+                multiple={multiple}
+                required={required}
+                style={{
+                  color: getTextColor(puck.metadata.theme),
+                  maxWidth: '400px',
+                }}
+              />
+            </div>
+          )
+        },
       },
       HeadingBlock: {
         label: 'Heading',
@@ -544,14 +571,9 @@ export function useConfig({
     },
     root: {
       render: ({ children, pageMaxWidth, alignment, puck }: RootProps) => {
-        const { formId, pageId, isPreview, page, pagesTotal, theme } = puck.metadata
+        const { formId, pageId, isPreview, page, pagesTotal, theme, participantId } = puck.metadata
         const isLastStep = page.pageNumber === pagesTotal
-        console.log({
-          isLastStep,
-          pageNumber: page.pageNumber,
-          pagesTotal,
-          pageFields: page.pageFields,
-        })
+
         let buttonText = 'Next'
         let action: string | undefined = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_NEXT
 
@@ -562,27 +584,43 @@ export function useConfig({
 
         const disabled = isPreview || (isPreview && isLastStep)
 
+        const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+          event.preventDefault()
+
+          if (isPreview) {
+            return
+          }
+
+          console.log('Submitting form...')
+          fetcher.submit(event.currentTarget, {
+            method: 'POST',
+            action,
+          })
+        }
+
         return (
           <div
             id='puckpage-container'
             className={`w-full h-full min-h-full p-6 flex flex-col items-center ${theme === 'LIGHT' ? 'light bg-white' : 'dark'}`}
           >
-            <Form
-              method='POST'
-              action={action}
+            <fetcher.Form
+              noValidate
+              onSubmit={onSubmit}
+              onReset={(e) => e.preventDefault()}
               style={{
                 maxWidth: pageMaxWidth + 'px',
                 width: '100%',
               }}
               className={`flex flex-col items-${alignment} justify-start space-y-6 h-full min-h-full`}
             >
+              <input type='hidden' name='participantId' value={participantId ?? ''} />
               <input type='hidden' name='formId' value={formId} />
               <input type='hidden' name='pageId' value={pageId} />
               <main className='puck-root'>{children}</main>
               <Button disabled={disabled} type='submit' className={cn('max-w-[300px]')}>
                 {buttonText}
               </Button>
-            </Form>
+            </fetcher.Form>
           </div>
         )
       },
@@ -609,6 +647,7 @@ export function useConfig({
       metadata: {
         formId,
         pageId,
+        participantId,
         isPreview,
         page,
         pagesTotal,

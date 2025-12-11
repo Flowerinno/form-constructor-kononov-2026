@@ -18,6 +18,7 @@ export type RootProps = {
 type FormEditorProps = {
   formId: string
   pageId: string
+  participantId: string | null
   isPreview?: boolean
   page: Page
   pagesTotal: number
@@ -49,6 +50,7 @@ const initialData = {
 export function FormEditor({
   formId,
   pageId,
+  participantId,
   isPreview = false,
   page,
   pagesTotal,
@@ -68,6 +70,7 @@ export function FormEditor({
   const objectToPass = {
     formId,
     pageId,
+    participantId,
     isPreview,
     page,
     pagesTotal,

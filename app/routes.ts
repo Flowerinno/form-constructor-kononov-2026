@@ -28,11 +28,12 @@ export default [
     route('form/page/delete', 'routes/api/form/page/delete.ts'),
     route('form/theme', 'routes/api/form/theme.ts'),
 
-    // no auth only email from user
-    route('form/submissions/next', 'routes/api/form/submissions.next.ts'), // next step
-    route('form/:formId/submissions', 'routes/api/form/submissions.ts'), // in case user returns to the form after entering email we should check if he already been on some form pages
-    route('form/:formId/pages/:pageId/submissions/:submissionId', 'routes/api/form/submission.ts'), // get single submission for page review
-    route('form/submissions/submit', 'routes/api/form/submissions.submit.ts'), // final submit -> get all steps data, calculate results for statistics and save
+    route('form/submissions/next', 'routes/api/form/submissions.next.ts'),
+    route('form/:formId/submissions', 'routes/api/form/submissions.ts'),
+    route('form/:formId/pages/:pageId/submissions/:submissionId', 'routes/api/form/submission.ts'),
+    route('form/submissions/submit', 'routes/api/form/submissions.submit.ts'),
+
+    route('files/upload/signed', 'routes/api/files/upload.signed.ts'),
   ]),
 
   route(':formId', 'routes/entry-form.tsx'),
@@ -68,8 +69,11 @@ export const ROUTES = {
   API_FORM_SUBMISSIONS_NEXT: '/api/form/submissions/next',
   API_FORM_SUBMISSIONS_SUBMIT: '/api/form/submissions/submit',
 
+  API_FILES_UPLOAD_SIGNED: '/api/files/upload/signed',
+
   ENTRY_FORM: (formId: string) => `/${formId}`,
-  FORM_PAGE: (formId: string, pageId: string) => `/${formId}/${pageId}`,
+  FORM_PAGE: (formId: string, pageId: string, participantId: string | null) =>
+    `/${formId}/${pageId}?participantId=${participantId}`,
   SUBMIT_FORM: (formId: string) => `/${formId}/submit`,
   THANK_YOU: (formId: string) => `/${formId}/thank-you`,
 } as const

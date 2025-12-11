@@ -10,10 +10,10 @@ import {
   useSubmit,
 } from 'react-router'
 import { toast } from 'sonner'
+import { Spinner } from '~/components/app-ui/loading'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
-import { Spinner } from '~/core/components/loading'
 import { FormEditor } from '~/core/editor/form-editor'
 import { customResponse } from '~/lib/response'
 import { userContext } from '~/middleware/auth'
@@ -26,7 +26,7 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
 
-  const page = await getFormPage(pageId, formId)
+  const page = await getFormPage(pageId, formId, true)
 
   return customResponse({ page })
 }
@@ -109,7 +109,7 @@ const FormEdit = () => {
                         to={
                           'window' in globalThis
                             ? window.location.origin +
-                              ROUTES.FORM_PAGE(formId, pageId) +
+                              ROUTES.FORM_PAGE(formId, pageId, null) +
                               '?isPreview=true'
                             : ''
                         }
@@ -129,6 +129,7 @@ const FormEdit = () => {
                   pageId={pageId}
                   isPreview={true}
                   theme={page.form.theme}
+                  participantId={null}
                 />
               </>
             )}

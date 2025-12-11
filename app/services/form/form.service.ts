@@ -1,3 +1,4 @@
+import type { Prisma } from 'generated/prisma/client'
 import { prisma } from '~/db'
 import type { CreateFormSchema } from '~/validation/form'
 
@@ -49,17 +50,33 @@ export const getFormById = async (formId: string) => {
   })
 }
 
-export const getFormPage = async (pageId: string, formId: string) => {
+export const getFormPage = async (pageId: string, formId: string, isPreview = false) => {
+  const isPublishedOnly = !isPreview
+    ? ({
+        publishedAt: {
+          not: null,
+        },
+      } as Prisma.FormWhereInput)
+    : {}
+
   return await prisma.page.findFirst({
     where: {
       pageId,
       formId,
+      form: isPublishedOnly,
     },
     include: {
       form: {
         select: {
+          publishedAt: true,
           pagesTotal: true,
           theme: true,
+          pages: {
+            select: {
+              pageId: true,
+              pageNumber: true,
+            },
+          },
         },
       },
     },
