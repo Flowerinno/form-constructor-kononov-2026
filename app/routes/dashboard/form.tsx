@@ -12,6 +12,7 @@ import {
 import { toast } from 'sonner'
 import { Spinner } from '~/components/app-ui/loading'
 import { Button } from '~/components/ui/button'
+import { Checkbox } from '~/components/ui/checkbox'
 import { Heading } from '~/components/ui/heading'
 import { Paragraph } from '~/components/ui/paragraph'
 import {
@@ -87,6 +88,21 @@ export default function Form() {
     }
   }
 
+  const onToggleAllowResubmissions = () => {
+    const formData = new FormData()
+    formData.append('formId', currentForm.formId)
+
+    submit(formData, {
+      method: 'POST',
+      action: ROUTES.API_FORM_TOGGLE_ALLOW_RESUBMISSIONS,
+      navigate: false,
+    })
+    toast.success('Form resubmissions toggled')
+  }
+
+  const isFormEmpty =
+    currentForm.pages.length === 0 || currentForm.pages.some((page) => !page.pageFields)
+
   const togglePublish = () => {
     const confirmMessage = currentForm.publishedAt
       ? 'Are you sure you want to unpublish this form? It will no longer be accessible to participants.'
@@ -96,14 +112,14 @@ export default function Form() {
     const formData = new FormData()
     formData.append('formId', currentForm.formId)
 
-    if (currentForm.pages.some((page) => !page.pageFields)) {
+    if (isFormEmpty) {
       toast.error(
         'Cannot publish a form with incomplete pages. Please complete all pages before publishing.',
       )
       return
     }
 
-    if (approved && currentForm.pages.length > 0) {
+    if (approved) {
       submit(formData, {
         method: 'POST',
         action: ROUTES.API_FORM_TOGGLE_PUBLISH,
@@ -160,7 +176,12 @@ export default function Form() {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button onClick={togglePublish} size={'icon-sm'} className='mt-1'>
+            <Button
+              disabled={isFormEmpty}
+              onClick={togglePublish}
+              size={'icon-sm'}
+              className='mt-1'
+            >
               {currentForm.publishedAt ? (
                 <ZapIcon className='text-green-400' />
               ) : (
@@ -192,6 +213,17 @@ export default function Form() {
             </SelectGroup>
           </SelectContent>
         </Select>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Checkbox
+              onCheckedChange={onToggleAllowResubmissions}
+              defaultChecked={currentForm.allowResubmission}
+            />
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Allow resubmissions</p>
+          </TooltipContent>
+        </Tooltip>
       </Heading>
       {isNoPages && (
         <Paragraph className='mt-4'>No pages found. Please add pages to your form.</Paragraph>
@@ -221,6 +253,7 @@ export default function Form() {
                       pagesTotal={currentForm.pagesTotal}
                       theme={currentForm.theme}
                       isPreview={true}
+                      participantId={null}
                     />
                   )}
                 </Link>

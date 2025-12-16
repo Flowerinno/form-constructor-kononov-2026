@@ -1,4 +1,4 @@
-import { data, Form, redirect, useActionData, useLoaderData } from 'react-router'
+import { Form, redirect, useActionData, useLoaderData } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Heading } from '~/components/ui/heading'
 import { Input } from '~/components/ui/input'
@@ -14,13 +14,15 @@ import { authSchema } from '~/validation/auth'
 import type { Route } from './+types/auth'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const token = new URL(request.url).searchParams.get('otp')
+  const query = new URL(request.url)
+  const token = query.searchParams.get('otp')
+  const isNewUser = query.searchParams.get('newUser') === 'true'
   const session = await getSession(request.headers.get('Cookie'))
 
   try {
     if (token) {
       const otpData = await verifyOtp(token)
-      const verifiedSession = await createUserSession(otpData.userId)
+      const verifiedSession = await createUserSession(otpData.userId, isNewUser)
 
       setSessionData(session, verifiedSession)
 
@@ -37,10 +39,10 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       throw redirect(ROUTES.DASHBOARD)
     }
 
-    return data(customResponse({ message: 'Sign in required' }))
+    return customResponse({ message: 'Sign in required' })
   } catch (error) {
     isRedirectResponse(error)
-    return data(errorResponse(error))
+    return errorResponse(error)
   }
 }
 

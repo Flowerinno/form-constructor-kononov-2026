@@ -8,7 +8,7 @@ export const userContext = createContext<SessionData | null>(null)
 
 export const authMiddleware = async ({ request, context }: Route.LoaderArgs) => {
   const reqSession = await getSession(request.headers.get('Cookie'))
-  const userSession = await getUserSession(reqSession.data.sessionId)
+  const userSession = await getUserSession(reqSession.get('sessionId'))
 
   if (!userSession || !userSession.userId) {
     throw redirect(ROUTES.AUTH, {

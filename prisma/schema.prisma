@@ -9,13 +9,13 @@ datasource db {
 }
 
 model User {
-  id         Int       @id @default(autoincrement())
-  userId     String    @unique @default(cuid())
-  email      String    @unique
-  name       String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
+  id                 Int                 @id @default(autoincrement())
+  userId             String              @unique @default(cuid())
+  email              String              @unique
+  name               String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  verifiedAt         DateTime?
   sessions           Session[]
   forms              Form[]
   verificationTokens VerificationToken[]
@@ -24,35 +24,41 @@ model User {
 }
 
 model Participant {
-  id            Int          @id @default(autoincrement())
-  participantId String       @unique @default(cuid())
-  email         String
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-  lastVisited   DateTime?
-  completedAt   DateTime?
-  formId        String
-  form          Form         @relation(fields: [formId], references: [formId], onDelete: Cascade)
-  formAnswers   FormAnswer[]
+  id              Int              @id @default(autoincrement())
+  participantId   String           @unique @default(cuid())
+  email           String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  lastVisited     DateTime?
+  completedAt     DateTime?
+  formId          String
+  form            Form             @relation(fields: [formId], references: [formId], onDelete: Cascade)
+  formAnswers     FormAnswer[]
+  fieldAnswers    FieldAnswer[]
+  formSubmissions FormSubmission[]
 
   @@index([email])
 }
 
 model Form {
-  id              Int              @id @default(autoincrement())
-  formId          String           @unique @default(cuid())
-  title           String
-  description     String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  publishedAt     DateTime?
-  formSubmissions FormSubmission[]
-  creatorId       String
-  creator         User             @relation(fields: [creatorId], references: [userId])
-  pages           Page[]
-  pagesTotal      Int              @default(0)
-  theme           FormTheme        @default(DARK)
-  participants    Participant[]
+  id                Int              @id @default(autoincrement())
+  formId            String           @unique @default(cuid())
+  title             String
+  description       String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  publishedAt       DateTime?
+  formSubmissions   FormSubmission[]
+  creatorId         String
+  creator           User             @relation(fields: [creatorId], references: [userId], onDelete: Cascade)
+  pages             Page[]
+  pagesTotal        Int              @default(0)
+  theme             FormTheme        @default(DARK)
+  participants      Participant[]
+  formAnswers       FormAnswer[]
+  allowResubmission Boolean          @default(false)
+  finalTitle        String?
+  finalDescription  String?
 
   @@index([title, createdAt, creatorId, publishedAt])
 }
@@ -69,30 +75,53 @@ model Page {
   updatedAt   DateTime     @updatedAt
   formAnswers FormAnswer[]
 
-  @@index([formId, createdAt])
+  @@index([formId, pageId, createdAt])
 }
 
 model FormAnswer {
-  id            Int         @id @default(autoincrement())
-  pageId        String
-  page          Page        @relation(fields: [pageId], references: [pageId])
-  answer        String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  participant   Participant @relation(fields: [participantId], references: [participantId])
-  participantId String
+  id               Int             @id @default(autoincrement())
+  answerId         String          @unique @default(cuid())
+  pageId           String
+  page             Page            @relation(fields: [pageId], references: [pageId], onDelete: Cascade)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  participant      Participant     @relation(fields: [participantId], references: [participantId], onDelete: Cascade)
+  participantId    String
+  formId           String
+  form             Form            @relation(fields: [formId], references: [formId], onDelete: Cascade)
+  fieldAnswers     FieldAnswer[]
+  formSubmission   FormSubmission? @relation(fields: [formSubmissionId], references: [id], onDelete: Cascade)
+  formSubmissionId String?
 
   @@index([pageId, participantId, createdAt])
 }
 
-model FormSubmission {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  form      Form     @relation(fields: [formId], references: [id])
-  formId    Int
+model FieldAnswer {
+  id            Int           @id @default(autoincrement())
+  fieldId       String
+  type          FormFieldType
+  answer        String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  participant   Participant   @relation(fields: [participantId], references: [participantId], onDelete: Cascade)
+  participantId String
+  formAnswer    FormAnswer    @relation(fields: [formAnswerId], references: [answerId], onDelete: Cascade)
+  formAnswerId  String
 
-  @@index([createdAt, formId])
+  @@index([fieldId, participantId, formAnswerId, createdAt])
+}
+
+model FormSubmission {
+  id            String       @id @default(cuid())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  form          Form         @relation(fields: [formId], references: [formId], onDelete: Cascade)
+  formId        String
+  participant   Participant  @relation(fields: [participantId], references: [participantId], onDelete: Cascade)
+  participantId String
+  formAnswers   FormAnswer[]
+
+  @@index([createdAt, formId, participantId])
 }
 
 model Session {
@@ -122,16 +151,13 @@ model VerificationToken {
 }
 
 enum FormFieldType {
-  TEXTAREA
-  SELECT
-  RADIO
-  CHECKBOX
-  TEXT
-  DATE
-  NUMBER
-  PARAGRAPH
-  HEADER
-  LINK
+  BUTTONBLOCK
+  TEXTINPUTFIELD
+  TEXTAREAFIELD
+  SELECTFIELD
+  RADIOGROUPFIELD
+  CHECKBOXFIELD
+  FILEFIELD
 }
 
 enum FormTheme {

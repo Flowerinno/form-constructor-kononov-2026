@@ -31,3 +31,18 @@ export const TIME = {
   TEN_MINUTES: 10 * 60 * 1000,
   ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
 }
+
+export const FIELD_TYPE_MAP = {
+  ButtonBlock: 'BUTTONBLOCK',
+  TextInputField: 'TEXTINPUTFIELD',
+  TextAreaField: 'TEXTAREAFIELD',
+  SelectField: 'SELECTFIELD',
+  RadioGroupField: 'RADIOGROUPFIELD',
+  CheckboxField: 'CHECKBOXFIELD',
+  FileField: 'FILEFIELD',
+} as const
+
+export const PAGINATION_DEFAULTS = {
+  PAGE: 1,
+  TAKE: 12,
+}

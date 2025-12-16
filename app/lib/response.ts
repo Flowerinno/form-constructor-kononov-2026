@@ -21,29 +21,45 @@ export class AppError extends Error {
   }
 }
 
-type ErrorObject = { message: string; name?: string }
+export type SuccessResponse<T> = {
+  data: T
+  error: null
+}
 
-export const errorResponse = (error: unknown): { error: ErrorObject; data: null } => {
-  if (error instanceof UserError || error instanceof AuthError || error instanceof AppError) {
-    return { error: { message: error.message, name: error.name }, data: null }
+type ErrorObject = { message: string; name: string; map: Record<string, string>[] }
+export type ErrorResponse = {
+  data: null
+  error: ErrorObject
+}
+
+export const errorResponse = (error: unknown): ErrorResponse => {
+  if (error instanceof ZodError) {
+    return {
+      error: {
+        message: 'Validation Error',
+        name: 'ZodError',
+        map: error.issues.map((issue) => ({ id: issue.path.join('.'), message: issue.message })),
+      },
+      data: null,
+    }
   }
 
-  if (error instanceof ZodError) {
-    return { error: { message: 'Validation Error', name: 'ZodError' }, data: null }
+  if (error instanceof UserError || error instanceof AuthError || error instanceof AppError) {
+    return { error: { message: error.message, name: error.name, map: [] }, data: null }
   }
 
   if (error instanceof Error) {
-    return { error: { message: error.message, name: error.name || 'Error' }, data: null }
+    return { error: { message: error.message, name: error.name || 'Error', map: [] }, data: null }
   }
 
   return {
-    error: { message: 'An unexpected and unknown error occurred.', name: 'UnknownError' },
+    error: { message: 'An unexpected and unknown error occurred.', name: 'UnknownError', map: [] },
     data: null,
   }
 }
 
-export const customResponse = <T>(data: T): { data: T; error: null } => {
-  return { data, error: null }
+export const customResponse = <T>(payload: T): SuccessResponse<T> => {
+  return { data: payload, error: null }
 }
 
 export const isRedirectResponse = (error: unknown) => {

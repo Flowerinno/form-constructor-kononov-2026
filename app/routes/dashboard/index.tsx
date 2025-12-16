@@ -1,6 +1,8 @@
 import { PlusIcon } from 'lucide-react'
-import { Form, Link, useLoaderData } from 'react-router'
+import type { FormEvent } from 'react'
+import { Form, Link, redirect, useLoaderData, useSubmit } from 'react-router'
 import { toast } from 'sonner'
+import AppPagination from '~/components/app-ui/app-pagination'
 import { Button } from '~/components/ui/button'
 import {
   Dialog,
@@ -15,25 +17,61 @@ import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { Paragraph } from '~/components/ui/paragraph'
 import { customResponse } from '~/lib/response'
+import { getPaginationData } from '~/lib/utils'
 import { userContext } from '~/middleware/auth'
 import { ROUTES } from '~/routes'
 import { getUserForms } from '~/services/form/form.service'
+import { paginationSchema } from '~/validation/general'
 import type { Route } from './+types'
 
-export const loader = async ({ context }: Route.LoaderArgs) => {
+export const loader = async ({ request, context }: Route.LoaderArgs) => {
+  const query = new URL(request.url).searchParams
+  const params = paginationSchema.parse(Object.fromEntries(query))
+
   const userData = context.get(userContext)
   if (!userData) {
-    throw new Response('Unauthorized', { status: 401 })
+    throw redirect(ROUTES.LOGOUT)
   }
-  const forms = await getUserForms(userData.userId)
-  return customResponse({ forms })
+
+  // const randomForms = Array.from({ length: 100 }).map((_, i) => ({
+  //   title: `Form ${i + 1}`,
+  //   description: `This is the description for form ${i + 1}.`,
+  // }))
+
+  // await prisma.form.createMany({
+  //   data: randomForms.map((form) => ({
+  //     title: form.title,
+  //     description: form.description,
+  //     creatorId: userData.userId,
+  //   })),
+  // })
+
+  const paginatedUserForms = await getUserForms(userData.userId, params.q, {
+    page: params.page,
+    take: 12,
+  })
+  return customResponse({
+    forms: paginatedUserForms.forms,
+    pagination: paginatedUserForms.pagination,
+  })
 }
-//TODO: possibly put submissions here later
+
 const DashboardIndex = () => {
-  const loaderData = useLoaderData<typeof loader>()
+  const submit = useSubmit()
+  const { data } = useLoaderData<typeof loader>()
+
+  const handleSearch = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const q = formData.get('q')?.toString() || ''
+    submit(q ? { q } : null, { method: 'GET' })
+  }
+
+  const paginationData = getPaginationData(data?.pagination)
+
   return (
     <div>
-      <Heading className='flex gap-2 items-center'>
+      <Heading className='flex flex-wrap gap-2 items-center'>
         My Forms
         <Dialog>
           <DialogTrigger asChild>
@@ -66,26 +104,37 @@ const DashboardIndex = () => {
             </DialogHeader>
           </DialogContent>
         </Dialog>
+        <Form onSubmit={handleSearch} className='max-w-fit'>
+          <Input
+            type='search'
+            name='q'
+            placeholder='Search forms...'
+            className='max-w-[400px] max-h-8'
+          />
+        </Form>
       </Heading>
       <div className='mt-8 flex flex-col gap-4'></div>
-      {loaderData.data.forms.length === 0 && (
+      {data && data.forms.length === 0 && (
         <p className='text-muted-foreground'>You have no forms yet.</p>
       )}
       <div className='grid grid-cols-2 gap-4'>
-        {loaderData.data.forms.map((form) => (
-          <Link
-            viewTransition
-            to={ROUTES.DASHBOARD_FORM(form.formId)}
-            key={form.formId}
-            className='p-4 border rounded-md'
-          >
-            <Paragraph className='font-bold mb-2'>{form.title}</Paragraph>
-            <Paragraph className='text-sm text-muted-foreground truncate max-w-[400px]'>
-              {form.description}
-            </Paragraph>
-          </Link>
-        ))}
+        {data &&
+          data.forms.map((form) => (
+            <Link
+              viewTransition
+              to={ROUTES.DASHBOARD_FORM(form.formId)}
+              key={form.formId}
+              className='p-4 border rounded-md'
+            >
+              <Paragraph className='font-bold mb-2'>{form.title}</Paragraph>
+              <Paragraph className='text-sm text-muted-foreground truncate max-w-[400px]'>
+                {form.description}
+              </Paragraph>
+            </Link>
+          ))}
       </div>
+      <br />
+      {paginationData && <AppPagination key={paginationData.currentPage} {...paginationData} />}
     </div>
   )
 }

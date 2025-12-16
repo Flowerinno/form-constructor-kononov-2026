@@ -32,6 +32,7 @@ export default [
     route('form/:formId/submissions', 'routes/api/form/submissions.ts'),
     route('form/:formId/pages/:pageId/submissions/:submissionId', 'routes/api/form/submission.ts'),
     route('form/submissions/submit', 'routes/api/form/submissions.submit.ts'),
+    route('form/toggle/allow-resubmissions', 'routes/api/form/toggle.allow-resubmissions.ts'),
 
     route('files/upload/signed', 'routes/api/files/upload.signed.ts'),
   ]),
@@ -68,6 +69,7 @@ export const ROUTES = {
   API_FORM_SUBMISSIONS_CREATE: '/api/form/submissions/create',
   API_FORM_SUBMISSIONS_NEXT: '/api/form/submissions/next',
   API_FORM_SUBMISSIONS_SUBMIT: '/api/form/submissions/submit',
+  API_FORM_TOGGLE_ALLOW_RESUBMISSIONS: '/api/form/toggle/allow-resubmissions',
 
   API_FILES_UPLOAD_SIGNED: '/api/files/upload/signed',
 

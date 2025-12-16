@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { Textarea } from '~/components/ui/textarea'
+import type { ErrorResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'
 import { ROUTES } from '~/routes'
 
@@ -84,22 +85,20 @@ export type RootProps = {
   puck: PuckContext
 }
 
-type ResponseError =
-  | {
-      message: string
-      errors: { id: string; message: string }[]
-    }
-  | undefined
-
 const getTextColor = (theme: 'LIGHT' | 'DARK' | undefined) => {
   return theme === 'LIGHT' ? '#0a0a0a' : '#fafafa'
 }
 
-const isFormError = (data: ResponseError, id: string) => {
-  const error = data?.errors.find((e) => e.id === id)
+const isFormError = (data: ErrorResponse, id: string) => {
+  if (!data.error) {
+    return null
+  }
+
+  const error = data.error.map.find((e) => e.id === id)
   if (error) {
     return <span className='text-red-500'>{error.message}</span>
   }
+
   return null
 }
 
@@ -112,15 +111,9 @@ export function useConfig({
   pagesTotal,
 }: ConfigProps): Config<Components, RootProps> {
   const fetcher = useFetcher()
-  const data = fetcher.data as ResponseError
+  const data = fetcher.data as ErrorResponse
 
-  useEffect(() => {
-    if (data && data?.errors) {
-      console.log('Form submission errors:', data.errors)
-    } else {
-      console.log('Form submitted successfully')
-    }
-  }, [data])
+  useEffect(() => {}, [data])
 
   return {
     components: {
@@ -572,17 +565,10 @@ export function useConfig({
     root: {
       render: ({ children, pageMaxWidth, alignment, puck }: RootProps) => {
         const { formId, pageId, isPreview, page, pagesTotal, theme, participantId } = puck.metadata
+
         const isLastStep = page.pageNumber === pagesTotal
-
-        let buttonText = 'Next'
-        let action: string | undefined = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_NEXT
-
-        if (isLastStep) {
-          action = ROUTES.API_FORM_SUBMISSIONS_SUBMIT
-          buttonText = 'Submit'
-        }
-
-        const disabled = isPreview || (isPreview && isLastStep)
+        const buttonText = isLastStep ? 'Next' : 'Submit'
+        const action = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_SUBMIT
 
         const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault()
@@ -591,7 +577,6 @@ export function useConfig({
             return
           }
 
-          console.log('Submitting form...')
           fetcher.submit(event.currentTarget, {
             method: 'POST',
             action,
@@ -617,7 +602,7 @@ export function useConfig({
               <input type='hidden' name='formId' value={formId} />
               <input type='hidden' name='pageId' value={pageId} />
               <main className='puck-root'>{children}</main>
-              <Button disabled={disabled} type='submit' className={cn('max-w-[300px]')}>
+              <Button disabled={isPreview} type='submit' className={cn('max-w-[300px]')}>
                 {buttonText}
               </Button>
             </fetcher.Form>

@@ -70,7 +70,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   let stack: string | undefined
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? '404' : 'Error'
+    message = error.status === 404 ? 'Page not found' : 'Error'
     details =
       error.status === 404 ? 'The requested page could not be found.' : error.statusText || details
   } else if (import.meta.env.DEV && error && error instanceof Error) {
@@ -87,7 +87,7 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           <code>{stack}</code>
         </pre>
       )}
-      <Link viewTransition to={ROUTES.DASHBOARD}>
+      <Link viewTransition to={ROUTES.AUTH}>
         <Button>Go home</Button>
       </Link>
     </main>

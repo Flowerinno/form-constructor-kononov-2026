@@ -54,6 +54,7 @@ export const checkExistingOtp = async (email: string) => {
     },
     select: {
       expiresAt: true,
+      token: true,
     },
   })
 }

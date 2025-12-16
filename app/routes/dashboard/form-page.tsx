@@ -1,14 +1,6 @@
 import { ArrowLeft, CheckIcon, LinkIcon, TrashIcon } from 'lucide-react'
 import { Suspense } from 'react'
-import {
-  Await,
-  Form,
-  Link,
-  UNSAFE_invariant,
-  useLoaderData,
-  useParams,
-  useSubmit,
-} from 'react-router'
+import { Await, Form, Link, UNSAFE_invariant, useLoaderData, useSubmit } from 'react-router'
 import { toast } from 'sonner'
 import { Spinner } from '~/components/app-ui/loading'
 import { Button } from '~/components/ui/button'
@@ -28,14 +20,20 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
 
   const page = await getFormPage(pageId, formId, true)
 
-  return customResponse({ page })
+  if (!page) {
+    throw new Error('Page not found')
+  }
+
+  return customResponse({ page, formId, pageId })
 }
 
 const FormEdit = () => {
-  const loaderData = useLoaderData<typeof loader>()
+  const { data } = useLoaderData<typeof loader>()
   const submit = useSubmit()
-  const { formId = '', pageId = '' } = useParams<{ formId: string; pageId: string }>()
-  const page = loaderData.data.page
+
+  const page = data.page
+  const formId = data.formId
+  const pageId = data.pageId
 
   const onDeletePage = async () => {
     const agree = confirm(
