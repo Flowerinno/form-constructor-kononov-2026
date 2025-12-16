@@ -18,3 +18,15 @@ export type FormDefaultType = {
   }[]
   zones: {}
 }
+
+export type PaginationParams = {
+  page: number
+  take: number
+}
+
+export type PaginationData = {
+  totalItems: number
+  totalPages: number
+  currentPage: number
+  perPage: number
+}

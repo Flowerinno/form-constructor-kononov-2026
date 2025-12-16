@@ -23,15 +23,17 @@ export async function createUser(email: string) {
 }
 
 export const signIn = async (email: string): Promise<SessionData | undefined> => {
+  let isNewUser = false
   let user = await findUserByEmail(email)
 
   if (!user) {
+    isNewUser = true
     user = await createUser(email)
   }
 
   const existingOtp = await checkExistingOtp(user.email)
-
   if (existingOtp) {
+    console.log('Auth link:', generateAuthLink(existingOtp.token, isNewUser))
     return
   }
 
@@ -44,7 +46,7 @@ export const signIn = async (email: string): Promise<SessionData | undefined> =>
     select: { token: true },
   })
 
-  console.log('Auth link:', generateAuthLink(token)) // mock email
+  console.log('Auth link:', generateAuthLink(token, isNewUser)) // mock email
   // await sendEmail(email, {
   //   subject: EMAIL_TEMPLATES.authLink.subject,
   //   html: EMAIL_TEMPLATES.authLink.html(generateAuthLink(token)),

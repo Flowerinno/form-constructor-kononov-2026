@@ -59,10 +59,29 @@ export const toggleFormSchema = z.object({
   formId: z.string().min(1, 'Form ID is required'),
 })
 
+export const updateFormThankYouPageSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+  title: z
+    .string()
+    .min(1, 'Thank you page title is required')
+    .max(100, 'Thank you page title must be at most 100 characters long'),
+  description: z
+    .string()
+    .max(300, 'Thank you page description must be at most 300 characters long')
+    .optional(),
+})
+
 export type CreateFormSchema = z.infer<typeof createFormSchema>
+export type UpdateFormThankYouPageSchema = z.infer<typeof updateFormThankYouPageSchema>
 
 export const entryFormSubmission = z.object({
   email: z.email('Invalid email address'),
+})
+
+export const defaultFormPageFields = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  formId: z.string().min(1, 'Form ID is required'),
+  pageId: z.string().min(1, 'Page ID is required'),
 })
 
 export const buildZodSchema = (pageFields: FormDefaultType) => {
@@ -72,13 +91,19 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
     pageId: z.string().min(1, 'Page ID is required'),
   }
 
+  for (const { type, props } of pageFields.content) {
+    if (!props.id) {
+      throw new Error(`Field is missing an ID.`)
+    }
+
+    if (ComponentsEnum.includes(type) === false) {
+      throw new Error(`Unsupported component type: ${type}`)
+    }
+  }
+
   for (const component of pageFields.content) {
     const { type, props } = component
     const fieldId = props.id
-
-    if (!fieldId || !type.endsWith('Field')) {
-      continue
-    }
 
     let fieldSchema = null
 
@@ -99,7 +124,7 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
         if (!props.options || props.options.length === 0) {
           throw new Error(`SelectField with id ${fieldId} has no options defined.`)
         }
-        console.log('SelectField options:', props.options)
+
         const allowedSelectValues = props.options.map((opt) => opt.value)
 
         fieldSchema = z.enum(allowedSelectValues, {
@@ -107,13 +132,13 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
         })
 
         if (props?.required && props.required === true) {
-          console.log('SelectField is required:', props.label)
           fieldSchema = fieldSchema.refine((val) => val !== '', {
             message: `${props.label} is required.`,
           })
         }
         schemaFields[fieldId] = fieldSchema
         break
+
       case 'RadioGroupField':
         if (!props.options || props.options.length === 0) {
           throw new Error(`RadioGroupField with id ${fieldId} has no options defined.`)
@@ -131,6 +156,7 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
         }
         schemaFields[fieldId] = fieldSchema
         break
+
       case 'CheckboxField':
         fieldSchema = z.transform((val) => {
           if (val === 'on') return true
@@ -144,6 +170,7 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
         }
         schemaFields[fieldId] = fieldSchema
         break
+
       default:
         console.warn(`Skipping field type: ${type} for field ID: ${fieldId}`)
         continue

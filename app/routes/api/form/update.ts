@@ -17,7 +17,6 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   }
 
   const formData = await request.formData()
-  console.log('Form Data:', Object.fromEntries(formData))
   const validated = await updateFormSchema.parseAsync(Object.fromEntries(formData))
 
   const { formId, pageId, data: jsonObj } = validated
