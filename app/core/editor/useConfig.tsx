@@ -567,13 +567,16 @@ export function useConfig({
         const { formId, pageId, isPreview, page, pagesTotal, theme, participantId } = puck.metadata
 
         const isLastStep = page.pageNumber === pagesTotal
-        const buttonText = isLastStep ? 'Next' : 'Submit'
+        const buttonText = isLastStep ? 'Submit' : 'Next'
         const action = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_SUBMIT
 
         const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault()
+          event.stopPropagation()
 
-          if (isPreview) {
+          const validated = event.currentTarget.checkValidity()
+
+          if (isPreview || !action || !validated) {
             return
           }
 

@@ -16,8 +16,8 @@ import type { Route } from './+types/root'
 import './app.css'
 import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
-import { ROUTES } from './routes'
 import { cn } from './lib/utils'
+import { ROUTES } from './routes'
 
 export const links: Route.LinksFunction = () => [
   { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
@@ -52,7 +52,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           />
         )}
         {children}
-        <Toaster position='top-right' duration={3000} />
+        <Toaster position='top-right' duration={1000} closeButton />
         <ScrollRestoration />
         <Scripts />
       </body>

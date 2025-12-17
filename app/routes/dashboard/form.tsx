@@ -1,4 +1,4 @@
-import { CopyIcon, PlusIcon, TrashIcon, ZapIcon, ZapOffIcon } from 'lucide-react'
+import { ArrowLeft, CopyIcon, PlusIcon, TrashIcon, ZapIcon, ZapOffIcon } from 'lucide-react'
 import { Suspense } from 'react'
 import {
   Await,
@@ -7,6 +7,7 @@ import {
   Form as RRForm,
   UNSAFE_invariant,
   useLoaderData,
+  useSearchParams,
   useSubmit,
 } from 'react-router'
 import { toast } from 'sonner'
@@ -30,7 +31,7 @@ import { customResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'
 import { userContext } from '~/middleware/auth'
 import { ROUTES } from '~/routes'
-import { createFormPage, getFormById } from '~/services/form/form.service'
+import { countFormSubmissions, createFormPage, getFormById } from '~/services/form/form.service'
 import type { Route } from './+types/form'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
@@ -39,7 +40,8 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   UNSAFE_invariant(userData, 'userData is required')
 
   const form = await getFormById(formId)
-  return customResponse({ form })
+  const formSubmissionsCount = await countFormSubmissions(formId)
+  return customResponse({ form, formSubmissionsCount })
 }
 
 export const action = async ({ params, context }: Route.LoaderArgs) => {
@@ -52,6 +54,7 @@ export const action = async ({ params, context }: Route.LoaderArgs) => {
 
 export default function Form() {
   const { data } = useLoaderData<typeof loader>()
+  const [searchParams] = useSearchParams()
   const submit = useSubmit()
 
   const currentForm = data.form
@@ -132,7 +135,17 @@ export default function Form() {
   return (
     <div>
       <Heading className='flex flex-wrap gap-2 items-center'>
-        {currentForm.title}{' '}
+        <Link
+          to={{
+            pathname: ROUTES.DASHBOARD,
+            search: searchParams.toString(),
+          }}
+          viewTransition
+        >
+          <Button variant={'ghost'}>
+            <ArrowLeft /> Forms / <strong>{currentForm.title}</strong>
+          </Button>
+        </Link>{' '}
         <Tooltip>
           <TooltipTrigger asChild>
             <RRForm method='POST' navigate={false}>
@@ -225,12 +238,26 @@ export default function Form() {
           </TooltipContent>
         </Tooltip>
       </Heading>
+
+      <div className='mt-4 flex gap-2'>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Link to={ROUTES.DASHBOARD_FORM_SUBMISSIONS(currentForm.formId)}>
+              <Button variant='outline'>Submissions: {data.formSubmissionsCount ?? 0}</Button>
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Go to submissions</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
       {isNoPages && (
         <Paragraph className='mt-4'>No pages found. Please add pages to your form.</Paragraph>
       )}
       <Suspense fallback={<Spinner />}>
         <Await resolve={currentForm}>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-12'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-12'>
             {currentForm &&
               currentForm.pages.map((page) => (
                 <Link

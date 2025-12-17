@@ -113,6 +113,7 @@ model FieldAnswer {
 
 model FormSubmission {
   id            String       @id @default(cuid())
+  submissionId  String       @unique @default(cuid())
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
   form          Form         @relation(fields: [formId], references: [formId], onDelete: Cascade)
@@ -131,7 +132,7 @@ model Session {
   token     String    @unique
   expiresAt DateTime
   expiredAt DateTime?
-  createdAt DateTime  @default(now())
+  createdAt   DateTime    @default(now())
   updatedAt DateTime  @updatedAt
 
   @@index([userId])

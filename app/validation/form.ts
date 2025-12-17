@@ -127,11 +127,12 @@ export const buildZodSchema = (pageFields: FormDefaultType) => {
 
         const allowedSelectValues = props.options.map((opt) => opt.value)
 
-        fieldSchema = z.enum(allowedSelectValues, {
-          error: () => `Provided invalid option for ${props.label}`,
-        })
+        fieldSchema = z.string()
 
         if (props?.required && props.required === true) {
+          fieldSchema = z.enum(allowedSelectValues, {
+            error: () => `Provided invalid option for ${props.label}`,
+          })
           fieldSchema = fieldSchema.refine((val) => val !== '', {
             message: `${props.label} is required.`,
           })

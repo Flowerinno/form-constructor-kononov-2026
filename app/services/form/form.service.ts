@@ -1,8 +1,7 @@
-import type { Prisma } from 'generated/prisma/client'
+import type { FormAnswer, Prisma } from 'generated/prisma/client'
 import { PAGINATION_DEFAULTS } from '~/core/constant'
 import type { PaginationParams } from '~/core/editor/types'
 import { prisma } from '~/db'
-import { logger } from '~/lib/logger'
 import { type CreateFormSchema, type UpdateFormThankYouPageSchema } from '~/validation/form'
 
 export const getPaginatedForms = async (userId: string, q: string) => {
@@ -88,6 +87,14 @@ export const getFormById = async (formId: string) => {
           pageNumber: 'asc',
         },
       },
+    },
+  })
+}
+
+export const countFormSubmissions = async (formId: string) => {
+  return await prisma.formSubmission.count({
+    where: {
+      formId,
     },
   })
 }
@@ -240,7 +247,35 @@ export const createFormAnswerWithFieldAnswers = async ({
         },
       },
     })
-    .catch((error) => logger.error(error, 'Error creating form answer with field answers'))
+    .catch((error) => {
+      console.error('Error creating form answer with field answers:', error)
+      throw error
+    })
+}
+
+export const getFormAnswersForParticipant = async (formId: string, participantId: string) => {
+  return await prisma.formAnswer.findMany({
+    where: {
+      formId,
+      participantId,
+    },
+  })
+}
+
+export const createFormSubmission = async (
+  formId: string,
+  participantId: string,
+  formAnswers: FormAnswer[],
+) => {
+  return await prisma.formSubmission.create({
+    data: {
+      formId,
+      participantId,
+      formAnswers: {
+        connect: formAnswers.map((fa) => ({ id: fa.id })),
+      },
+    },
+  })
 }
 
 export const checkExistingFormSubmission = async (formId: string, participantId: string) => {
@@ -248,6 +283,23 @@ export const checkExistingFormSubmission = async (formId: string, participantId:
     where: {
       formId,
       participantId,
+    },
+  })
+}
+
+export const getThankYouPageData = async (submissionId: string) => {
+  return await prisma.formSubmission.findUniqueOrThrow({
+    where: {
+      submissionId,
+    },
+    select: {
+      form: {
+        select: {
+          finalTitle: true,
+          finalDescription: true,
+          theme: true,
+        },
+      },
     },
   })
 }
