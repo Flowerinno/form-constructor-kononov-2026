@@ -28,7 +28,6 @@ export default [
     route('form/page/delete', 'routes/api/form/page/delete.ts'),
     route('form/theme', 'routes/api/form/theme.ts'),
 
-    route('form/submissions/next', 'routes/api/form/submissions.next.ts'),
     route('form/:formId/submissions', 'routes/api/form/submissions.ts'),
     route('form/:formId/pages/:pageId/submissions/:submissionId', 'routes/api/form/submission.ts'),
     route('form/submissions/submit', 'routes/api/form/submissions.submit.ts'),
@@ -40,7 +39,7 @@ export default [
   route(':formId', 'routes/entry-form.tsx'),
   route(':formId/:pageId', 'routes/form-page.tsx'),
   route('submit/:formId', 'routes/submit-form.tsx'),
-  route('thank-you', 'routes/thank-you.tsx'),
+  route('/:submissionId/thank-you', 'routes/thank-you.tsx'),
 ] satisfies RouteConfig
 
 export const ROUTES = {
@@ -67,7 +66,6 @@ export const ROUTES = {
   API_FORM_SUBMISSION_GET: (formId: string, pageId: string, submissionId: string) =>
     `/api/form/${formId}/pages/${pageId}/submissions/${submissionId}`,
   API_FORM_SUBMISSIONS_CREATE: '/api/form/submissions/create',
-  API_FORM_SUBMISSIONS_NEXT: '/api/form/submissions/next',
   API_FORM_SUBMISSIONS_SUBMIT: '/api/form/submissions/submit',
   API_FORM_TOGGLE_ALLOW_RESUBMISSIONS: '/api/form/toggle/allow-resubmissions',
 
@@ -77,5 +75,5 @@ export const ROUTES = {
   FORM_PAGE: (formId: string, pageId: string, participantId: string | null) =>
     `/${formId}/${pageId}?participantId=${participantId}`,
   SUBMIT_FORM: (formId: string) => `/${formId}/submit`,
-  THANK_YOU: (formId: string) => `/${formId}/thank-you`,
+  THANK_YOU: (submissionId: string) => `/${submissionId}/thank-you`,
 } as const

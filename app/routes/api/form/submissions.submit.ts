@@ -1,10 +1,15 @@
-import { redirect, UNSAFE_invariant } from 'react-router'
+import { redirect } from 'react-router'
 import type { FormDefaultType } from '~/core/editor/types'
-import { prisma } from '~/db'
-import { customResponse, errorResponse } from '~/lib/response'
+import { errorResponse } from '~/lib/response'
 import { formatFieldAnswers } from '~/lib/utils'
 import { ROUTES } from '~/routes'
-import { getFormPage, getNextFormPage } from '~/services/form/form.service'
+import {
+  createFormAnswerWithFieldAnswers,
+  createFormSubmission,
+  getFormAnswersForParticipant,
+  getFormPage,
+  getNextFormPage,
+} from '~/services/form/form.service'
 import { buildZodSchema, defaultFormPageFields } from '~/validation/form'
 import type { Route } from './+types/submissions.submit'
 
@@ -20,7 +25,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const { formId, pageId, participantId } = defaultFormPageFields.parse(obj)
 
   const page = await getFormPage(pageId, formId)
-  UNSAFE_invariant(page, 'Page not found')
+
+  if (!page) {
+    throw new Error('Page not found')
+  }
 
   const pageFields = JSON.parse(page.pageFields as string) as FormDefaultType
   const schema = buildZodSchema(pageFields)
@@ -36,20 +44,13 @@ export const action = async ({ request }: Route.ActionArgs) => {
     participantId,
   })
 
-  await prisma.formAnswer.create({
-    data: {
-      pageId,
-      participantId,
-      formId,
-      fieldAnswers: {
-        createMany: {
-          data: fieldAnswersToCreate,
-        },
-      },
-    },
+  await createFormAnswerWithFieldAnswers({
+    formId,
+    pageId,
+    participantId,
+    fieldAnswers: fieldAnswersToCreate,
   })
 
-  // create form answer with fieldAnswers
   if (page.pageNumber !== page.form.pagesTotal) {
     const nextPage = await getNextFormPage(page.formId, page.pageNumber)
     if (!nextPage) {
@@ -57,26 +58,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
     }
     throw redirect(ROUTES.FORM_PAGE(formId, nextPage.pageId, participantId))
   } else {
-    const formAnswers = await prisma.formAnswer.findMany({
-      where: {
-        formId,
-        participantId,
-      },
-    })
-    await prisma.formSubmission.create({
-      data: {
-        formId: page.formId,
-        participantId: participantId,
-        formAnswers: {
-          connect: formAnswers.map((fa) => ({ id: fa.id })),
-        },
-      },
-    })
+    //last page
+    const formAnswers = await getFormAnswersForParticipant(formId, participantId)
+    const submission = await createFormSubmission(formId, participantId, formAnswers)
+
+    throw redirect(ROUTES.THANK_YOU(submission.submissionId))
   }
-
-  //store answer, navigate on the client
-
-  console.log(data, 'Validated Data')
-
-  return customResponse({ message: 'Submission successful' })
 }

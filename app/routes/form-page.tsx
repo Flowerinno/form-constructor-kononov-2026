@@ -27,7 +27,7 @@ const FormPage = () => {
   if (!data || !data.page) {
     return <Spinner />
   }
-
+  console.log(data.page, 'Page Data in Form Page Route')
   return (
     <RenderPage
       page={data.page}

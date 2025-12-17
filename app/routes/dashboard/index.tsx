@@ -1,6 +1,6 @@
 import { PlusIcon } from 'lucide-react'
 import type { FormEvent } from 'react'
-import { Form, Link, redirect, useLoaderData, useSubmit } from 'react-router'
+import { Form, Link, redirect, useLoaderData, useSearchParams, useSubmit } from 'react-router'
 import { toast } from 'sonner'
 import AppPagination from '~/components/app-ui/app-pagination'
 import { Button } from '~/components/ui/button'
@@ -33,23 +33,11 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
     throw redirect(ROUTES.LOGOUT)
   }
 
-  // const randomForms = Array.from({ length: 100 }).map((_, i) => ({
-  //   title: `Form ${i + 1}`,
-  //   description: `This is the description for form ${i + 1}.`,
-  // }))
-
-  // await prisma.form.createMany({
-  //   data: randomForms.map((form) => ({
-  //     title: form.title,
-  //     description: form.description,
-  //     creatorId: userData.userId,
-  //   })),
-  // })
-
   const paginatedUserForms = await getUserForms(userData.userId, params.q, {
     page: params.page,
     take: 12,
   })
+
   return customResponse({
     forms: paginatedUserForms.forms,
     pagination: paginatedUserForms.pagination,
@@ -59,6 +47,7 @@ export const loader = async ({ request, context }: Route.LoaderArgs) => {
 const DashboardIndex = () => {
   const submit = useSubmit()
   const { data } = useLoaderData<typeof loader>()
+  const [searchParams] = useSearchParams()
 
   const handleSearch = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -108,6 +97,7 @@ const DashboardIndex = () => {
           <Input
             type='search'
             name='q'
+            defaultValue={searchParams.get('q') ?? ''}
             placeholder='Search forms...'
             className='max-w-[400px] max-h-8'
           />
@@ -122,7 +112,10 @@ const DashboardIndex = () => {
           data.forms.map((form) => (
             <Link
               viewTransition
-              to={ROUTES.DASHBOARD_FORM(form.formId)}
+              to={{
+                pathname: ROUTES.DASHBOARD_FORM(form.formId),
+                search: searchParams.toString(),
+              }}
               key={form.formId}
               className='p-4 border rounded-md'
             >
