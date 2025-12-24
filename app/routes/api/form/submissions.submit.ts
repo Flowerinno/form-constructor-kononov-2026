@@ -4,6 +4,8 @@ import { errorResponse } from '~/lib/response'
 import { formatFieldAnswers } from '~/lib/utils'
 import { ROUTES } from '~/routes'
 import {
+  checkExistingFormPageAnswer,
+  checkExistingFormSubmission,
   createFormAnswerWithFieldAnswers,
   createFormSubmission,
   getFormAnswersForParticipant,
@@ -24,14 +26,27 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const { formId, pageId, participantId } = defaultFormPageFields.parse(obj)
 
-  const page = await getFormPage(pageId, formId)
+  // do not allow resubmissions on page AND form levels - block submission if either exists
+  const [existingFormSubmission, existingFormPageAnswer] = await Promise.all([
+    checkExistingFormSubmission(formId, participantId),
+    checkExistingFormPageAnswer(pageId, participantId),
+  ])
 
+  if (existingFormSubmission) {
+    throw new Error('Form submission already exists for this participant')
+  }
+
+  if (existingFormPageAnswer) {
+    throw new Error('Form answer for this page already exists for this participant')
+  }
+
+  const page = await getFormPage(pageId, formId)
   if (!page) {
     throw new Error('Page not found')
   }
 
   const pageFields = JSON.parse(page.pageFields as string) as FormDefaultType
-  const schema = buildZodSchema(pageFields)
+  const schema = await buildZodSchema(pageFields, { formId, pageId, participantId })
 
   const { success, error, data } = schema.safeParse(Object.fromEntries(formData))
   if (!success) {
@@ -56,6 +71,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     if (!nextPage) {
       throw new Error('Next page not found')
     }
+
     throw redirect(ROUTES.FORM_PAGE(formId, nextPage.pageId, participantId))
   } else {
     //last page

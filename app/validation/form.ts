@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { FormDefaultType } from '~/core/editor/types'
 import { ComponentsEnum } from '~/core/editor/useConfig'
+import { getFilePrefix, verifyFileUpload } from '~/services/files/files.service'
 
 export const createFormSchema = z.object({
   title: z
@@ -10,6 +11,18 @@ export const createFormSchema = z.object({
   description: z
     .string()
     .max(200, 'Form description must be at most 200 characters long')
+    .optional(),
+})
+
+export const updateFinalPageSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+  finalTitle: z
+    .string()
+    .min(1, 'Final page title is required')
+    .max(100, 'Final page title must be at most 100 characters long'),
+  finalDescription: z
+    .string()
+    .max(300, 'Final page description must be at most 300 characters long')
     .optional(),
 })
 
@@ -84,97 +97,75 @@ export const defaultFormPageFields = z.object({
   pageId: z.string().min(1, 'Page ID is required'),
 })
 
-export const buildZodSchema = (pageFields: FormDefaultType) => {
+export type DefaultFormPageFields = z.infer<typeof defaultFormPageFields>
+
+const fieldHandlers: Record<
+  string,
+  (props: any, context: any) => Promise<z.ZodTypeAny> | z.ZodTypeAny
+> = {
+  FileField: async (props, { formData, fieldId }) => {
+    if (!props.required) return z.any().optional()
+
+    const files = await verifyFileUpload(getFilePrefix({ ...formData, fieldId }))
+    return files.keyCount === 0
+      ? z.string().min(1, `${props.label} is required.`)
+      : z.any().optional()
+  },
+
+  TextInputField: (props) => {
+    const schema = z.string()
+    return props.required ? schema.min(1, `${props.label} is required.`) : schema.optional()
+  },
+
+  TextareaField: (props) => fieldHandlers.TextInputField(props, {}),
+
+  SelectField: (props) => {
+    if (!props.options?.length) {
+      throw new Error(`SelectField ${props.id} missing options.`)
+    }
+
+    const values = props.options.map((o: any) => o.value)
+
+    const schema = z.enum(values, {
+      error: () => `Invalid option for ${props.label}`,
+    })
+    return props.required ? schema : schema.optional()
+  },
+
+  CheckboxField: (props) => {
+    const schema = z.preprocess((val) => val === 'on', z.boolean())
+    return props.required ? schema.refine((v) => v === true, `${props.label} is required.`) : schema
+  },
+
+  RadioGroupField: (props) => {
+    if (!props.options?.length) {
+      throw new Error(`RadioGroupField ${props.id} missing options.`)
+    }
+
+    const values = props.options.map((o: any) => o.value)
+    const schema = z.enum(values, {
+      error: () => `Invalid option for ${props.label}`,
+    })
+    return props.required ? schema : schema.optional()
+  },
+}
+
+export const buildZodSchema = async (
+  pageFields: FormDefaultType,
+  formData: DefaultFormPageFields,
+) => {
   const schemaFields: Record<string, z.ZodTypeAny> = {
-    participantId: z.string().min(1, 'Participant ID is required'),
-    formId: z.string().min(1, 'Form ID is required'),
-    pageId: z.string().min(1, 'Page ID is required'),
+    formId: z.string().min(1),
+    pageId: z.string().min(1),
+    participantId: z.string().min(1),
   }
 
   for (const { type, props } of pageFields.content) {
-    if (!props.id) {
-      throw new Error(`Field is missing an ID.`)
-    }
+    if (!props.id) throw new Error('Field missing ID')
 
-    if (ComponentsEnum.includes(type) === false) {
-      throw new Error(`Unsupported component type: ${type}`)
-    }
-  }
-
-  for (const component of pageFields.content) {
-    const { type, props } = component
-    const fieldId = props.id
-
-    let fieldSchema = null
-
-    switch (type) {
-      case 'TextInputField':
-      case 'TextareaField':
-        // case 'FileField': check file handling by looking at s3 uploads by id
-        fieldSchema = z.string()
-
-        if (props?.required && props.required === true) {
-          fieldSchema = fieldSchema.min(1, `${props.label} is required.`)
-        }
-
-        schemaFields[fieldId] = fieldSchema
-        break
-
-      case 'SelectField':
-        if (!props.options || props.options.length === 0) {
-          throw new Error(`SelectField with id ${fieldId} has no options defined.`)
-        }
-
-        const allowedSelectValues = props.options.map((opt) => opt.value)
-
-        fieldSchema = z.string()
-
-        if (props?.required && props.required === true) {
-          fieldSchema = z.enum(allowedSelectValues, {
-            error: () => `Provided invalid option for ${props.label}`,
-          })
-          fieldSchema = fieldSchema.refine((val) => val !== '', {
-            message: `${props.label} is required.`,
-          })
-        }
-        schemaFields[fieldId] = fieldSchema
-        break
-
-      case 'RadioGroupField':
-        if (!props.options || props.options.length === 0) {
-          throw new Error(`RadioGroupField with id ${fieldId} has no options defined.`)
-        }
-
-        const radioValues = props.options.map((opt) => opt.value)
-        fieldSchema = z.enum(radioValues, {
-          error: `Provided invalid option for ${props.label}`,
-        })
-
-        if (props?.required && props.required === true) {
-          fieldSchema = fieldSchema.refine((val) => val !== '', {
-            message: `${props.label} is required.`,
-          })
-        }
-        schemaFields[fieldId] = fieldSchema
-        break
-
-      case 'CheckboxField':
-        fieldSchema = z.transform((val) => {
-          if (val === 'on') return true
-          return false
-        })
-
-        if (props?.required && props.required === true) {
-          fieldSchema = fieldSchema.refine((val) => val === true, {
-            message: `You must accept ${props.label}.`,
-          })
-        }
-        schemaFields[fieldId] = fieldSchema
-        break
-
-      default:
-        console.warn(`Skipping field type: ${type} for field ID: ${fieldId}`)
-        continue
+    const handler = fieldHandlers[type]
+    if (handler) {
+      schemaFields[props.id] = await handler(props, { formData, fieldId: props.id })
     }
   }
 

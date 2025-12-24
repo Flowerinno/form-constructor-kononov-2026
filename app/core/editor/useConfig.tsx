@@ -1,6 +1,5 @@
-import { type Config, type PuckContext } from '@measured/puck'
-import type { Form as DBForm, Page } from 'generated/prisma/client'
-import React, { useEffect } from 'react'
+import { type Config } from '@measured/puck'
+import React, { useEffect, useRef } from 'react'
 import { useFetcher } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -20,6 +19,8 @@ import { Textarea } from '~/components/ui/textarea'
 import type { ErrorResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'
 import { ROUTES } from '~/routes'
+import { getTextColor, uploadFiles } from './puck.utils'
+import { type Components, type ConfigProps, type RootProps } from './types'
 
 export const ComponentsEnum = [
   'ButtonBlock',
@@ -33,61 +34,6 @@ export const ComponentsEnum = [
   'DescriptionBlock',
   'TwoColumnLayout',
 ] as const
-
-type Components = {
-  ButtonBlock: {
-    text: string
-    variant: 'default' | 'destructive' | 'outline'
-    alignment: 'left' | 'center' | 'right'
-  }
-  TextInputField: { label: string; placeholder: string; required: boolean }
-  TextareaField: {
-    label: string
-    placeholder: string
-    required: boolean
-    rows: number
-  }
-  SelectField: {
-    label: string
-    options: { value: string; label: string }[]
-    placeholder: string
-    required: boolean
-  }
-  RadioGroupField: {
-    label: string
-    options: { value: string; label: string }[]
-    required: boolean
-  }
-  CheckboxField: { label: string; required: boolean; defaultChecked: boolean }
-  FileField: { label: string; accept: string; multiple: boolean; required: boolean }
-  HeadingBlock: { level: '1' | '2' | '3'; text: string }
-  DescriptionBlock: { text: string }
-  TwoColumnLayout: {
-    leftColumn: React.ComponentType
-    rightColumn: React.ComponentType
-  }
-}
-
-export type ConfigProps = {
-  formId: string
-  pageId: string
-  participantId: string | null
-  isPreview?: boolean
-  page: Page
-  pagesTotal: number
-  theme: DBForm['theme']
-}
-
-export type RootProps = {
-  children: React.ReactNode
-  pageMaxWidth?: number
-  alignment: 'left' | 'center'
-  puck: PuckContext
-}
-
-const getTextColor = (theme: 'LIGHT' | 'DARK' | undefined) => {
-  return theme === 'LIGHT' ? '#0a0a0a' : '#fafafa'
-}
 
 const isFormError = (data: ErrorResponse, id: string) => {
   if (!data.error) {
@@ -112,8 +58,13 @@ export function useConfig({
 }: ConfigProps): Config<Components, RootProps> {
   const fetcher = useFetcher()
   const data = fetcher.data as ErrorResponse
+  const buttonRef = useRef<HTMLButtonElement>(null)
 
-  useEffect(() => {}, [data])
+  useEffect(() => {
+    if (data && data.error) {
+      console.log('We got errors')
+    }
+  }, [data])
 
   return {
     components: {
@@ -482,6 +433,18 @@ export function useConfig({
                 accept={accept || undefined}
                 multiple={multiple}
                 required={required}
+                onChange={async (e) => {
+                  buttonRef.current?.setAttribute('disabled', 'true')
+                  uploadFiles(
+                    e.target.files,
+                    puck.metadata.formId,
+                    puck.metadata.pageId,
+                    puck.metadata.participantId,
+                    id,
+                  ).finally(() => {
+                    buttonRef.current?.removeAttribute('disabled')
+                  })
+                }}
                 style={{
                   color: getTextColor(puck.metadata.theme),
                   maxWidth: '400px',
@@ -592,7 +555,6 @@ export function useConfig({
             className={`w-full h-full min-h-full p-6 flex flex-col items-center ${theme === 'LIGHT' ? 'light bg-white' : 'dark'}`}
           >
             <fetcher.Form
-              noValidate
               onSubmit={onSubmit}
               onReset={(e) => e.preventDefault()}
               style={{
@@ -605,9 +567,19 @@ export function useConfig({
               <input type='hidden' name='formId' value={formId} />
               <input type='hidden' name='pageId' value={pageId} />
               <main className='puck-root'>{children}</main>
-              <Button disabled={isPreview} type='submit' className={cn('max-w-[300px]')}>
+              <Button
+                ref={buttonRef}
+                disabled={isPreview}
+                type='submit'
+                className={cn('max-w-[300px]')}
+              >
                 {buttonText}
               </Button>
+              <br />{' '}
+              <strong>
+                {' '}
+                {page.pageNumber} / {pagesTotal}
+              </strong>
             </fetcher.Form>
           </div>
         )

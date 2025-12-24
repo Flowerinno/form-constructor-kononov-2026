@@ -1,4 +1,5 @@
 import {
+  type ListObjectsV2CommandInput,
   type ListObjectsV2Output,
   type PutObjectCommandInput,
   GetObjectCommand,
@@ -9,46 +10,49 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { logger } from '~/lib/logger'
 
-const BUCKET_KEY = 'uploads'
+export const BUCKET_KEY = 'uploads'
 
 const s3Client = new S3Client({
   endpoint: process.env.S3_ENDPOINT,
+  region: 'us-east-1',
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: 'minioadmin',
+    secretAccessKey: 'minioadmin',
+  },
 })
 
 export async function getUploadUrl(
-  bucketName: string = BUCKET_KEY,
   key: string,
-  expiresIn: number = 3600,
+  fileType: string,
+  expiresIn: number = 30, // 30 seconds is enough for a single upload safeguard, couldn't find docs on max limit here with client side upload
 ): Promise<string> {
   try {
     const command = new PutObjectCommand({
-      Bucket: bucketName,
+      Bucket: BUCKET_KEY,
       Key: key,
+      ContentType: fileType,
     })
 
     const url = await getSignedUrl(s3Client, command, { expiresIn })
     return url
   } catch (error) {
-    logger.error(error, `Error generating upload URL for ${key} in bucket ${bucketName}:`)
+    logger.error(error, `Error generating upload URL for ${key} in bucket ${BUCKET_KEY}:`)
     throw error
   }
 }
 
-export const getDownloadUrl = async (
-  bucketName: string = BUCKET_KEY,
-  key: string,
-  expiresIn: number = 3600,
-): Promise<string> => {
+export const getDownloadUrl = async (key: string, expiresIn: number = 3600): Promise<string> => {
   try {
     const command = new GetObjectCommand({
-      Bucket: bucketName,
+      Bucket: BUCKET_KEY,
       Key: key,
     })
 
     const url = await getSignedUrl(s3Client, command, { expiresIn })
     return url
   } catch (error) {
-    logger.error(error, `Error generating download URL for ${key} in bucket ${bucketName}:`)
+    logger.error(error, `Error generating download URL for ${key} in bucket ${BUCKET_KEY}:`)
     throw error
   }
 }
@@ -75,22 +79,40 @@ export async function uploadFile(
   }
 }
 
-export async function listBucketObjects(
-  bucketName: string = BUCKET_KEY,
-  prefix?: string,
-): Promise<ListObjectsV2Output['Contents']> {
-  const listParams = {
-    Bucket: bucketName,
+export async function verifyFileUpload(
+  prefix: string,
+): Promise<{ contents: ListObjectsV2Output['Contents']; keyCount: number }> {
+  const listParams: ListObjectsV2CommandInput = {
+    Bucket: BUCKET_KEY,
     Prefix: prefix,
+    Delimiter: '/',
+    MaxKeys: 10,
   }
 
   try {
     const command = new ListObjectsV2Command(listParams)
     const response: ListObjectsV2Output = await s3Client.send(command)
-
-    return response.Contents || []
+    return { contents: response.Contents || [], keyCount: response.KeyCount || 0 }
   } catch (error) {
-    logger.error(error, `Error listing objects in bucket ${bucketName}:`)
+    logger.error(error, `Error listing objects in bucket ${BUCKET_KEY}:`)
     throw error
   }
+}
+
+type FileNameParams = {
+  formId: string
+  pageId: string
+  participantId: string
+  fieldId: string
+  isUpload?: boolean
+}
+
+export const getFilePrefix = ({
+  formId,
+  pageId,
+  participantId,
+  fieldId,
+  isUpload = false,
+}: FileNameParams) => {
+  return `${formId}-${pageId}-${participantId}-${fieldId}-${isUpload ? Date.now() : ''}`
 }

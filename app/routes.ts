@@ -25,6 +25,7 @@ export default [
     route('form/toggle', 'routes/api/form/toggle.ts'),
 
     route('form/page/update', 'routes/api/form/page/update.ts'),
+    route('form/final/update', 'routes/api/form/final.update.ts'),
     route('form/page/delete', 'routes/api/form/page/delete.ts'),
     route('form/theme', 'routes/api/form/theme.ts'),
 
@@ -57,6 +58,7 @@ export const ROUTES = {
 
   API_FORM_CREATE: '/api/form/create',
   API_FORM_UPDATE: '/api/form/update',
+  API_FORM_FINAL_PAGE_UPDATE: '/api/form/final/update',
   API_FORM_PAGE_UPDATE: '/api/form/page/update',
   API_FORM_PAGE_DELETE: '/api/form/page/delete',
   API_FORM_DELETE: '/api/form/delete',
