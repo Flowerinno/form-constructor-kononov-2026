@@ -1,4 +1,13 @@
-import { ArrowLeft, CopyIcon, PlusIcon, TrashIcon, ZapIcon, ZapOffIcon } from 'lucide-react'
+import {
+  ArrowLeft,
+  CopyIcon,
+  LucideRefreshCcw,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  ZapIcon,
+  ZapOffIcon,
+} from 'lucide-react'
 import { Suspense } from 'react'
 import {
   Await,
@@ -7,14 +16,26 @@ import {
   Form as RRForm,
   UNSAFE_invariant,
   useLoaderData,
+  useRevalidator,
   useSearchParams,
   useSubmit,
 } from 'react-router'
 import { toast } from 'sonner'
 import { Spinner } from '~/components/app-ui/loading'
 import { Button } from '~/components/ui/button'
-import { Checkbox } from '~/components/ui/checkbox'
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '~/components/ui/dialog'
 import { Heading } from '~/components/ui/heading'
+import { Input } from '~/components/ui/input'
+import { Label } from '~/components/ui/label'
 import { Paragraph } from '~/components/ui/paragraph'
 import {
   Select,
@@ -27,6 +48,7 @@ import {
 } from '~/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
 import { RenderPage } from '~/core/editor/render-page'
+import { prisma } from '~/db'
 import { customResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'
 import { userContext } from '~/middleware/auth'
@@ -40,8 +62,19 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   UNSAFE_invariant(userData, 'userData is required')
 
   const form = await getFormById(formId)
+  const notFinishedEngagements = await prisma.formAnswer.count({
+    where: {
+      formId,
+      page: {
+        pageNumber: 1,
+      },
+      participant: {
+        completedAt: null,
+      },
+    },
+  })
   const formSubmissionsCount = await countFormSubmissions(formId)
-  return customResponse({ form, formSubmissionsCount })
+  return customResponse({ form, formSubmissionsCount, notFinishedEngagements })
 }
 
 export const action = async ({ params, context }: Route.LoaderArgs) => {
@@ -54,6 +87,7 @@ export const action = async ({ params, context }: Route.LoaderArgs) => {
 
 export default function Form() {
   const { data } = useLoaderData<typeof loader>()
+  const revalidator = useRevalidator()
   const [searchParams] = useSearchParams()
   const submit = useSubmit()
 
@@ -91,17 +125,17 @@ export default function Form() {
     }
   }
 
-  const onToggleAllowResubmissions = () => {
-    const formData = new FormData()
-    formData.append('formId', currentForm.formId)
+  // const onToggleAllowResubmissions = () => {
+  //   const formData = new FormData()
+  //   formData.append('formId', currentForm.formId)
 
-    submit(formData, {
-      method: 'POST',
-      action: ROUTES.API_FORM_TOGGLE_ALLOW_RESUBMISSIONS,
-      navigate: false,
-    })
-    toast.success('Form resubmissions toggled')
-  }
+  //   submit(formData, {
+  //     method: 'POST',
+  //     action: ROUTES.API_FORM_TOGGLE_ALLOW_RESUBMISSIONS,
+  //     navigate: false,
+  //   })
+  //   toast.success('Form resubmissions toggled')
+  // }
 
   const isFormEmpty =
     currentForm.pages.length === 0 || currentForm.pages.some((page) => !page.pageFields)
@@ -206,6 +240,63 @@ export default function Form() {
             <p>{currentForm.publishedAt ? 'Unpublish form' : 'Publish form'}</p>
           </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size={'icon-sm'} className='mt-1'>
+                  <PencilIcon />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className='sm:max-w-[425px]'>
+                <RRForm
+                  method='POST'
+                  action={ROUTES.API_FORM_FINAL_PAGE_UPDATE}
+                  navigate={false}
+                  onSubmitCapture={() => toast.success('Thank you page updated')}
+                  className='flex flex-col gap-4'
+                >
+                  <DialogHeader>
+                    <DialogTitle>Edit final page</DialogTitle>
+                    <DialogDescription>
+                      Make changes to your thank you page here. Click save when you&apos;re done.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className='grid gap-4'>
+                    <div className='grid gap-3'>
+                      <input type='hidden' name='formId' value={currentForm.formId} />
+                      <Label htmlFor='title'>Title</Label>
+                      <Input
+                        id='title'
+                        name='finalTitle'
+                        minLength={5}
+                        maxLength={100}
+                        defaultValue={currentForm.finalTitle ?? ''}
+                      />
+                    </div>
+                    <div className='grid gap-3'>
+                      <Label htmlFor='description'>Description</Label>
+                      <Input
+                        id='description'
+                        name='finalDescription'
+                        defaultValue={currentForm.finalDescription ?? ''}
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant='outline'>Cancel</Button>
+                    </DialogClose>
+                    <Button type='submit'>Save changes</Button>
+                  </DialogFooter>
+                </RRForm>
+              </DialogContent>
+            </Dialog>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Edit</p>
+          </TooltipContent>
+        </Tooltip>
         <Select
           name='theme'
           defaultValue={currentForm.theme}
@@ -226,17 +317,6 @@ export default function Form() {
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Checkbox
-              onCheckedChange={onToggleAllowResubmissions}
-              defaultChecked={currentForm.allowResubmission}
-            />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Allow resubmissions</p>
-          </TooltipContent>
-        </Tooltip>
       </Heading>
 
       <div className='mt-4 flex gap-2'>
@@ -250,6 +330,17 @@ export default function Form() {
             <p>Go to submissions</p>
           </TooltipContent>
         </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='outline'>Engagements: {data.notFinishedEngagements ?? 0}</Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Engaged but not finished</p>
+          </TooltipContent>
+        </Tooltip>
+        <Button variant='outline' onClick={() => revalidator.revalidate()}>
+          <LucideRefreshCcw />
+        </Button>
       </div>
 
       {isNoPages && (
@@ -257,7 +348,7 @@ export default function Form() {
       )}
       <Suspense fallback={<Spinner />}>
         <Await resolve={currentForm}>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mt-12'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 mt-12'>
             {currentForm &&
               currentForm.pages.map((page) => (
                 <Link

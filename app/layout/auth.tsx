@@ -36,7 +36,7 @@ const AuthLayout = () => {
   const data = useLoaderData<typeof loader>()
   return (
     <div id='main-layout' className='flex min-h-full min-w-full relative'>
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
         <AppSidebar />
         <main className='flex flex-col min-h-full w-full'>
           <SidebarTrigger className='mt-2 ml-2' />

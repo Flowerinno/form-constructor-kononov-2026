@@ -48,7 +48,7 @@ export function getPaginationData(pagination: PaginationData): AppPaginationProp
 
 export function formatAnswerDataToStore(answer: unknown) {
   if (answer === null || answer === undefined) {
-    throw new Error('Answer is null or undefined - impossible')
+    return ''
   }
 
   if (Array.isArray(answer)) {

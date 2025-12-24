@@ -1,10 +1,15 @@
-import { redirect, UNSAFE_invariant, useFetcher } from 'react-router'
+import { redirect, useFetcher } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { customResponse } from '~/lib/response'
 import { ROUTES } from '~/routes'
-import { checkExistingFormSubmission, getFormById } from '~/services/form/form.service'
+import {
+  checkExistingFormSubmission,
+  getFormById,
+  getLatestFormAnswerForParticipant,
+  getNextFormPage,
+} from '~/services/form/form.service'
 import {
   createFormParticipant,
   getFormParticipantByEmail,
@@ -27,8 +32,12 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
   }
 
   const firstPage = form.pages.find((page) => page.pageNumber === 1)
-  UNSAFE_invariant(firstPage, 'First page not found - not valid form configuration')
 
+  if (!firstPage) {
+    throw new Error('First page not found')
+  }
+
+  let redirectURL = ROUTES.ENTRY_FORM(params.formId)
   let participant = await getFormParticipantByEmail(email, params.formId)
 
   if (!participant) {
@@ -43,9 +52,32 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
         message: 'You have already submitted this form and resubmissions are not allowed.',
       })
     }
+
+    const latestParticipantPage = await getLatestFormAnswerForParticipant(
+      params.formId,
+      participant.participantId,
+    )
+
+    if (latestParticipantPage) {
+      const nextFormPage = await getNextFormPage(
+        params.formId,
+        latestParticipantPage.page.pageNumber,
+      )
+
+      // already submitted some steps, redirect to the next one
+      if (nextFormPage) {
+        redirectURL = ROUTES.FORM_PAGE(
+          params.formId,
+          nextFormPage.pageId,
+          participant.participantId,
+        )
+        throw redirect(redirectURL)
+      }
+    }
   }
 
-  const redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageId, participant.participantId)
+  redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageId, participant.participantId)
+
   throw redirect(redirectURL)
 }
 

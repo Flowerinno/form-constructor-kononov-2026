@@ -3,6 +3,7 @@ import { PAGINATION_DEFAULTS } from '~/core/constant'
 import type { PaginationParams } from '~/core/editor/types'
 import { prisma } from '~/db'
 import { type CreateFormSchema, type UpdateFormThankYouPageSchema } from '~/validation/form'
+import type { QueryParams } from '~/validation/general'
 
 export const getPaginatedForms = async (userId: string, q: string) => {
   const totalItems = await prisma.form.count({
@@ -262,6 +263,25 @@ export const getFormAnswersForParticipant = async (formId: string, participantId
   })
 }
 
+export const getLatestFormAnswerForParticipant = async (formId: string, participantId: string) => {
+  return await prisma.formAnswer.findFirst({
+    where: {
+      formId,
+      participantId,
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    include: {
+      page: {
+        select: {
+          pageNumber: true,
+        },
+      },
+    },
+  })
+}
+
 export const createFormSubmission = async (
   formId: string,
   participantId: string,
@@ -287,6 +307,15 @@ export const checkExistingFormSubmission = async (formId: string, participantId:
   })
 }
 
+export const checkExistingFormPageAnswer = async (pageId: string, participantId: string) => {
+  return await prisma.formAnswer.findFirst({
+    where: {
+      pageId,
+      participantId,
+    },
+  })
+}
+
 export const getThankYouPageData = async (submissionId: string) => {
   return await prisma.formSubmission.findUniqueOrThrow({
     where: {
@@ -302,4 +331,86 @@ export const getThankYouPageData = async (submissionId: string) => {
       },
     },
   })
+}
+
+export const getFormSubmissions = async ({
+  formId,
+  queryParams,
+}: {
+  formId: string
+  queryParams: QueryParams
+}) => {
+  const formSubmissions = await prisma.formSubmission.findMany({
+    where: {
+      formId,
+      createdAt: queryParams.date
+        ? {
+            gte: new Date(`${queryParams.date}T00:00:00.000Z`),
+            lte: new Date(`${queryParams.date}T23:59:59.999Z`),
+          }
+        : undefined,
+      OR: [
+        {
+          participant: {
+            email: {
+              contains: queryParams.q ?? undefined,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          submissionId: {
+            equals: queryParams.q ?? undefined,
+            mode: 'insensitive',
+          },
+        },
+      ],
+    },
+    skip: (queryParams.page - 1) * PAGINATION_DEFAULTS.TAKE,
+    take: PAGINATION_DEFAULTS.TAKE,
+    orderBy: [
+      {
+        participant: {
+          email: queryParams.sortBy === 'participant' ? queryParams.sortDirection : undefined,
+        },
+      },
+      {
+        createdAt:
+          queryParams.sortBy === 'createdAt' || !queryParams.sortBy
+            ? queryParams.sortDirection
+            : undefined,
+      },
+    ],
+    include: {
+      participant: {
+        select: {
+          email: true,
+          participantId: true,
+          completedAt: true,
+        },
+      },
+      formAnswers: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  })
+
+  const submissionsCount = await prisma.formSubmission.count({
+    where: { formId },
+  })
+
+  const paginationObject = {
+    currentPage: queryParams.page,
+    perPage: PAGINATION_DEFAULTS.TAKE,
+    totalItems: submissionsCount,
+    totalPages: Math.ceil(submissionsCount / PAGINATION_DEFAULTS.TAKE),
+  }
+
+  return {
+    submissionsCount,
+    formSubmissions,
+    pagination: paginationObject,
+  }
 }
