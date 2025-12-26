@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { logger } from '~/lib/logger'
+import { logError } from '~/lib/logger'
 import { ROUTES } from '~/routes'
 import { validateFiles } from '~/validation/general'
 
@@ -48,14 +48,30 @@ export const uploadFiles = async (
             })
           }
         } catch (error) {
-          logger.error(error, 'File upload error:')
+          logError({
+            error,
+            message: 'File validation/upload error:',
+            meta: {
+              formId,
+              pageId,
+              participantId,
+            },
+          })
           toast.error(`Failed to upload file: ${file.name}, please try again.`)
           throw error
         }
       }),
     ])
   } catch (error) {
-    logger.error(error, 'File validation/upload error:')
+    logError({
+      error,
+      message: 'File upload error:',
+      meta: {
+        formId,
+        pageId,
+        participantId,
+      },
+    })
     if (error instanceof Error) {
       toast.error(error.message || 'File upload error, please try again.')
     }

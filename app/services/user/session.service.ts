@@ -2,10 +2,17 @@ import crypto from 'crypto'
 import type { Session } from 'react-router'
 import { TIME } from '~/core/constant'
 import { prisma } from '~/db'
+import { checkRedisUserSession } from '~/lib/redis'
+import type { UserSession } from './types'
 
-export const getUserSession = async (sessionId: string | undefined) => {
+export const getUserSession = async (sessionId: string | undefined): Promise<UserSession> => {
   if (!sessionId) {
     return null
+  }
+
+  const cachedSession = await checkRedisUserSession(sessionId)
+  if (cachedSession) {
+    return cachedSession
   }
 
   return await prisma.session.findUnique({

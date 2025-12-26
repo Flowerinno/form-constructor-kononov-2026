@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { logger } from '~/lib/logger'
+import { logError } from '~/lib/logger'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -19,6 +19,10 @@ export const sendEmail = async (
       throw new Error(`Resend API error: ${error.message}`)
     }
   } catch (error) {
-    logger.error(error, 'Failed to send email via Resend API')
+    logError({
+      error,
+      message: 'Failed to send email via Resend API',
+      meta: { emails: Array.isArray(emails) ? emails.join(',') : emails, subject: data.subject },
+    })
   }
 }

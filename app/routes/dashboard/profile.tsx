@@ -4,7 +4,7 @@ import { Button } from '~/components/ui/button'
 import { Heading } from '~/components/ui/heading'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
-import { logger } from '~/lib/logger'
+import { logError } from '~/lib/logger'
 import { commitSession, getSession, setSessionData, type SessionData } from '~/lib/session'
 import { updateUserName } from '~/services/user/user.service'
 import { profileSchema } from '~/validation/user'
@@ -31,7 +31,10 @@ export const action = async ({ request }: Route.ActionArgs) => {
       },
     })
   } catch (error) {
-    logger.error(error, 'Profile Action Error')
+    logError({
+      error,
+      message: 'Profile Action Error',
+    })
   }
 }
 

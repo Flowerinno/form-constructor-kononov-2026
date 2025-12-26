@@ -1,5 +1,5 @@
 import { prisma } from '~/db'
-import { logger } from '~/lib/logger'
+import { logError } from '~/lib/logger'
 import { AuthError } from '~/lib/response'
 
 export const verifyOtp = async (token: string) => {
@@ -23,7 +23,10 @@ export const verifyOtp = async (token: string) => {
 
     return verificationToken
   } catch (error) {
-    logger.error(error, 'Error verifying OTP token')
+    logError({
+      error,
+      message: 'Error verifying OTP token',
+    })
     throw new AuthError('Invalid or expired OTP token')
   } finally {
     await invalidateOtp(token)

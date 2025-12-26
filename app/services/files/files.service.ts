@@ -1,14 +1,13 @@
 import {
   type ListObjectsV2CommandInput,
   type ListObjectsV2Output,
-  type PutObjectCommandInput,
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
-import { logger } from '~/lib/logger'
+import { logError } from '~/lib/logger'
 
 export const BUCKET_KEY = 'uploads'
 
@@ -37,7 +36,11 @@ export async function getUploadUrl(
     const url = await getSignedUrl(s3Client, command, { expiresIn })
     return url
   } catch (error) {
-    logger.error(error, `Error generating upload URL for ${key} in bucket ${BUCKET_KEY}:`)
+    logError({
+      error,
+      message: `Error generating upload URL`,
+      meta: { key, bucket: BUCKET_KEY },
+    })
     throw error
   }
 }
@@ -52,29 +55,11 @@ export const getDownloadUrl = async (key: string, expiresIn: number = 3600): Pro
     const url = await getSignedUrl(s3Client, command, { expiresIn })
     return url
   } catch (error) {
-    logger.error(error, `Error generating download URL for ${key} in bucket ${BUCKET_KEY}:`)
-    throw error
-  }
-}
-
-export async function uploadFile(
-  bucketName: string = BUCKET_KEY,
-  key: string,
-  body: PutObjectCommandInput['Body'],
-  contentType: string,
-): Promise<void> {
-  const uploadParams: PutObjectCommandInput = {
-    Bucket: bucketName,
-    Key: key,
-    Body: body,
-    ContentType: contentType,
-  }
-
-  try {
-    const command = new PutObjectCommand(uploadParams)
-    await s3Client.send(command)
-  } catch (error) {
-    logger.error(error, `Error uploading file ${key} to bucket ${bucketName}:`)
+    logError({
+      error,
+      message: `Error generating download URL`,
+      meta: { key, bucket: BUCKET_KEY },
+    })
     throw error
   }
 }
@@ -94,7 +79,11 @@ export async function verifyFileUpload(
     const response: ListObjectsV2Output = await s3Client.send(command)
     return { contents: response.Contents || [], keyCount: response.KeyCount || 0 }
   } catch (error) {
-    logger.error(error, `Error listing objects in bucket ${BUCKET_KEY}:`)
+    logError({
+      error,
+      message: `Error listing objects in bucket`,
+      meta: { prefix, bucket: BUCKET_KEY },
+    })
     throw error
   }
 }

@@ -11,20 +11,26 @@ import { verifyOtp } from '~/services/auth/auth.service'
 import { createUserSession, getUserSession } from '~/services/user/session.service'
 import { signIn } from '~/services/user/user.service'
 import { authSchema } from '~/validation/auth'
+import { loginAuthSchema } from '~/validation/user'
 import type { Route } from './+types/auth'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
-  const query = new URL(request.url)
-  const token = query.searchParams.get('otp')
-  const isNewUser = query.searchParams.get('newUser') === 'true'
   const session = await getSession(request.headers.get('Cookie'))
 
-  try {
-    if (token) {
-      const otpData = await verifyOtp(token)
-      const verifiedSession = await createUserSession(otpData.userId, isNewUser)
+  const query = new URL(request.url)
+  const { success, data } = loginAuthSchema.safeParse(query.searchParams)
 
-      setSessionData(session, verifiedSession)
+  try {
+    const maybeUserSession = await getUserSession(session.get('sessionId'))
+    if (maybeUserSession) {
+      throw redirect(ROUTES.DASHBOARD)
+    }
+
+    if (success) {
+      const otpData = await verifyOtp(data.otp)
+      const verifiedSession = await createUserSession(otpData.userId, data.isNewUser)
+
+      await setSessionData(session, verifiedSession)
 
       throw redirect(ROUTES.DASHBOARD, {
         status: 302,
@@ -32,11 +38,6 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
           'Set-Cookie': await commitSession(session),
         },
       })
-    }
-
-    const maybeUserSession = await getUserSession(session.get('sessionId'))
-    if (maybeUserSession) {
-      throw redirect(ROUTES.DASHBOARD)
     }
 
     return customResponse({ message: 'Sign in required' })

@@ -1,5 +1,7 @@
 import { createCookieSessionStorage, type Session } from 'react-router'
 import { TIME } from '~/core/constant'
+import { invalidateUserSessions } from '~/services/user/session.service'
+import { deleteRedisUserSession, setRedisUserSession } from './redis'
 
 export type SessionData = {
   userId: string
@@ -28,11 +30,18 @@ const { getSession, commitSession, destroySession } = createCookieSessionStorage
   },
 })
 
-const setSessionData = (session: Session, sessionData: SessionData) => {
+const setSessionData = async (session: Session, sessionData: SessionData) => {
   session.set('userId', sessionData.userId)
   session.set('email', sessionData.email)
   session.set('name', sessionData.name)
   session.set('sessionId', sessionData.sessionId)
+  await setRedisUserSession(sessionData.sessionId, sessionData)
 }
 
-export { commitSession, destroySession, getSession, setSessionData }
+const customDestroySession = async (session: Session) => {
+  await invalidateUserSessions(session.get('userId'))
+  await deleteRedisUserSession(session.get('sessionId'))
+  return destroySession(session)
+}
+
+export { commitSession, customDestroySession as destroySession, getSession, setSessionData }
