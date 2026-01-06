@@ -1,6 +1,7 @@
 import { type Config } from '@measured/puck'
+import type { PageAnswer } from 'generated/prisma/browser'
 import React, { useEffect, useRef } from 'react'
-import { useFetcher } from 'react-router'
+import { Link, useFetcher } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
 import { Heading } from '~/components/ui/heading'
@@ -48,6 +49,32 @@ const isFormError = (data: ErrorResponse, id: string) => {
   return null
 }
 
+const getFilledAnswer = (decodedPageAnswers: Record<string, unknown>[], id: string) => {
+  for (const answer of decodedPageAnswers) {
+    if (answer[id]) {
+      return answer[id] as string
+    }
+  }
+  return ''
+}
+
+const getFilledFileAnswers = (decodedPageAnswers: Record<string, unknown>[], id: string) => {
+  for (const answer of decodedPageAnswers) {
+    if (answer[id]) {
+      return (
+        <div className='flex gap-2 items-center'>
+          {(answer[id] as string[]).map((fk, idx) => (
+            <Link key={fk} to={fk} target='_blank' rel='noreferrer' className='p-1 hover:underline'>
+              File {idx + 1}
+            </Link>
+          ))}
+        </div>
+      )
+    }
+  }
+  return null
+}
+
 export function useConfig({
   formId,
   pageId,
@@ -55,6 +82,7 @@ export function useConfig({
   isPreview = false,
   page,
   pagesTotal,
+  decodedPageAnswers = [],
 }: ConfigProps): Config<Components, RootProps> {
   const fetcher = useFetcher()
   const data = fetcher.data as ErrorResponse
@@ -141,6 +169,7 @@ export function useConfig({
               name={id}
               placeholder={placeholder}
               required={required}
+              defaultValue={getFilledAnswer(decodedPageAnswers, id)}
             />
           </div>
         ),
@@ -183,6 +212,7 @@ export function useConfig({
               placeholder={placeholder}
               required={required}
               rows={rows}
+              defaultValue={getFilledAnswer(decodedPageAnswers, id)}
               style={{
                 color: getTextColor(puck.metadata.theme),
               }}
@@ -241,7 +271,11 @@ export function useConfig({
                 {required ? ' *' : ''}
                 {data && isFormError(data, id)}
               </Label>
-              <Select required={required} name={id}>
+              <Select
+                defaultValue={getFilledAnswer(decodedPageAnswers, id)}
+                required={required}
+                name={id}
+              >
                 <SelectTrigger
                   style={{
                     color: getTextColor(puck.metadata.theme),
@@ -318,7 +352,11 @@ export function useConfig({
                 {required ? ' *' : ''}
                 {data && isFormError(data, id)}
               </Label>
-              <RadioGroup required={required} name={id}>
+              <RadioGroup
+                defaultValue={getFilledAnswer(decodedPageAnswers, id)}
+                required={required}
+                name={id}
+              >
                 {options.map((opt) => (
                   <div key={opt.value} className='flex items-center space-x-2'>
                     <RadioGroupItem id={`${id}-${opt.value}`} value={opt.value} />
@@ -372,7 +410,7 @@ export function useConfig({
               id={id}
               name={id}
               required={required}
-              defaultChecked={defaultChecked}
+              defaultChecked={getFilledAnswer(decodedPageAnswers, id) === 'true' || defaultChecked}
             />
             <Label
               style={{
@@ -426,13 +464,14 @@ export function useConfig({
                 {required ? ' *' : ''}
                 {data && isFormError(data, id)}
               </Label>
+              {getFilledFileAnswers(decodedPageAnswers, id)}
               <Input
                 id={id}
                 name={id}
                 type='file'
                 accept={accept || undefined}
                 multiple={multiple}
-                required={required}
+                required={getFilledFileAnswers(decodedPageAnswers, id) ? false : required}
                 onChange={async (e) => {
                   buttonRef.current?.setAttribute('disabled', 'true')
                   uploadFiles(
@@ -531,24 +570,40 @@ export function useConfig({
 
         const isLastStep = page.pageNumber === pagesTotal
         const buttonText = isLastStep ? 'Submit' : 'Next'
-        const action = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_SUBMIT
 
         const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
           event.preventDefault()
           event.stopPropagation()
 
-          const validated = event.currentTarget.checkValidity()
+          const submitter = (event.nativeEvent as unknown as SubmitEvent)
+            .submitter as HTMLButtonElement
+          const intent =
+            submitter?.name === 'intent' ? (submitter.value as 'next' | 'prev') : 'next'
 
-          if (isPreview || !action || !validated) {
+          const action = isPreview ? undefined : ROUTES.API_FORM_SUBMISSIONS_SUBMIT
+
+          if (intent === 'next') {
+            const validated = event.currentTarget.checkValidity()
+            if (!validated) {
+              return
+            }
+          }
+
+          if (isPreview || !action) {
             return
           }
 
-          fetcher.submit(event.currentTarget, {
+          const formData = new FormData(event.currentTarget)
+          formData.set('intent', intent)
+
+          fetcher.submit(formData, {
             method: 'POST',
             action,
           })
         }
-
+        const pageAnswer = page.pageAnswers?.find((pa: PageAnswer) => pa.pageId === page.pageId)
+        const pageAnswerId = pageAnswer ? pageAnswer.answerId : ''
+        console.log(pageAnswerId, 'pageAnswerId')
         return (
           <div
             id='puckpage-container'
@@ -561,20 +616,37 @@ export function useConfig({
                 maxWidth: pageMaxWidth + 'px',
                 width: '100%',
               }}
+              noValidate
               className={`flex flex-col items-${alignment} justify-start space-y-6 h-full min-h-full`}
             >
               <input type='hidden' name='participantId' value={participantId ?? ''} />
               <input type='hidden' name='formId' value={formId} />
               <input type='hidden' name='pageId' value={pageId} />
+              <input type='hidden' name='pageNumber' value={page.pageNumber} />
+              <input type='hidden' name='pageAnswerId' value={isPreview ? '' : pageAnswerId} />
               <main className='puck-root'>{children}</main>
-              <Button
-                ref={buttonRef}
-                disabled={isPreview}
-                type='submit'
-                className={cn('max-w-[300px]')}
-              >
-                {buttonText}
-              </Button>
+              <div className='flex gap-4 items-center justify-center'>
+                <Button
+                  ref={buttonRef}
+                  disabled={page.pageNumber <= 1 || isPreview}
+                  type='submit'
+                  name='intent'
+                  value='prev'
+                  className={cn('max-w-[300px]')}
+                >
+                  Previous
+                </Button>
+                <Button
+                  ref={buttonRef}
+                  disabled={isPreview}
+                  type='submit'
+                  name='intent'
+                  value='next'
+                  className={cn('max-w-[300px]')}
+                >
+                  {buttonText}
+                </Button>
+              </div>
               <br />{' '}
               <strong>
                 {' '}

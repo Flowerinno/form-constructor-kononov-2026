@@ -68,7 +68,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       if (nextFormPage) {
         redirectURL = ROUTES.FORM_PAGE(
           params.formId,
-          nextFormPage.pageId,
+          nextFormPage.pageNumber,
           participant.participantId,
         )
         throw redirect(redirectURL)
@@ -76,7 +76,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
     }
   }
 
-  redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageId, participant.participantId)
+  redirectURL = ROUTES.FORM_PAGE(params.formId, firstPage.pageNumber, participant.participantId)
 
   throw redirect(redirectURL)
 }
@@ -94,7 +94,7 @@ const EntryForm = () => {
           Please enter your email address to fill out the form
         </Label>
         {response?.data && <p className='mb-2 text-sm text-red-600'>{response.data.message}</p>}
-        <Input name='email' type='email' placeholder='Email address' />
+        <Input name='email' type='email' placeholder='Email address' minLength={5} required />
         <Button type='submit' className='mt-4 w-full'>
           Start
         </Button>

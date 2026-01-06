@@ -1,7 +1,8 @@
 import { createCookieSessionStorage, type Session } from 'react-router'
 import { TIME } from '~/core/constant'
 import { invalidateUserSessions } from '~/services/user/session.service'
-import { deleteRedisUserSession, setRedisUserSession } from './redis'
+import type { UserSession } from '~/services/user/types'
+import { deleteRedisEntry, setRedisEntry } from './redis'
 
 export type SessionData = {
   userId: string
@@ -26,21 +27,22 @@ const { getSession, commitSession, destroySession } = createCookieSessionStorage
     path: '/',
     sameSite: 'lax',
     secrets: [process.env.SESSION_SECRET],
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
   },
 })
 
-const setSessionData = async (session: Session, sessionData: SessionData) => {
+const setSessionData = async (session: Session, sessionData: UserSession) => {
+  if (!sessionData) return
   session.set('userId', sessionData.userId)
-  session.set('email', sessionData.email)
-  session.set('name', sessionData.name)
-  session.set('sessionId', sessionData.sessionId)
-  await setRedisUserSession(sessionData.sessionId, sessionData)
+  session.set('email', sessionData.user.email)
+  session.set('name', sessionData.user.name)
+  session.set('sessionId', sessionData.id)
+  await setRedisEntry(`session:${sessionData.id}`, sessionData, TIME.ONE_WEEK / 1000)
 }
 
 const customDestroySession = async (session: Session) => {
   await invalidateUserSessions(session.get('userId'))
-  await deleteRedisUserSession(session.get('sessionId'))
+  await deleteRedisEntry(`session:${session.get('sessionId')}`)
   return destroySession(session)
 }
 

@@ -10,7 +10,7 @@ import { FormEditor } from '~/core/editor/form-editor'
 import { customResponse } from '~/lib/response'
 import { userContext } from '~/middleware/auth'
 import { ROUTES } from '~/routes'
-import { getFormPage } from '~/services/form/form.service'
+import { getDashboardFormPage } from '~/services/form/form.service'
 import type { Route } from './+types/form-page'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
@@ -18,13 +18,13 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
 
-  const page = await getFormPage(pageId, formId, true)
+  const page = await getDashboardFormPage(pageId, formId, true)
 
   if (!page) {
     throw new Error('Page not found')
   }
 
-  return customResponse({ page, formId, pageId })
+  return customResponse({ page, formId, pageId, pageNumber: page.pageNumber })
 }
 
 const FormEdit = () => {
@@ -107,7 +107,7 @@ const FormEdit = () => {
                         to={
                           'window' in globalThis
                             ? window.location.origin +
-                              ROUTES.FORM_PAGE(formId, pageId, null) +
+                              ROUTES.FORM_PAGE(formId, data.pageNumber, null) +
                               '?isPreview=true'
                             : ''
                         }

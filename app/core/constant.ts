@@ -28,6 +28,8 @@ export const ERROR_MESSAGES = {
 } as const
 
 export const TIME = {
+  ONE_MINUTE: 60 * 1000,
+  FIVE_MINUTES: 5 * 60 * 1000,
   TEN_MINUTES: 10 * 60 * 1000,
   ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
 }
@@ -35,7 +37,7 @@ export const TIME = {
 export const FIELD_TYPE_MAP = {
   ButtonBlock: 'BUTTONBLOCK',
   TextInputField: 'TEXTINPUTFIELD',
-  TextAreaField: 'TEXTAREAFIELD',
+  TextareaField: 'TEXTAREAFIELD',
   SelectField: 'SELECTFIELD',
   RadioGroupField: 'RADIOGROUPFIELD',
   CheckboxField: 'CHECKBOXFIELD',

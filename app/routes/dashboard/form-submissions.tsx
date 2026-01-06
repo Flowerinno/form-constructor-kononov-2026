@@ -1,5 +1,5 @@
 import type { SortingState, Updater } from '@tanstack/react-table'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, DownloadCloudIcon } from 'lucide-react'
 import { Link, redirect, useLoaderData, useLocation, useSubmit } from 'react-router'
 import { SubmissionsTable } from '~/components/app-ui/submissions-table'
 import { Button } from '~/components/ui/button'
@@ -98,6 +98,16 @@ const FormSubmissions = () => {
             <ArrowLeft /> Form submissions ( {submissionsCount} )
           </Button>
         </Link>{' '}
+        <Button size={'sm'}>
+          <Link
+            to={ROUTES.API_EXPORT_SUBMISSIONS(formId)}
+            target='_blank'
+            viewTransition
+            className='flex gap-2 items-center'
+          >
+            Export submissions <DownloadCloudIcon />
+          </Link>
+        </Button>
       </Heading>
       <SubmissionsTable
         data={formSubmissions}

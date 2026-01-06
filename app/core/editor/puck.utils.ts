@@ -29,6 +29,7 @@ export const uploadFiles = async (
             },
             body: JSON.stringify({
               fileType: file.type,
+              fileSize: file.size,
               formId,
               pageId,
               participantId,
@@ -39,13 +40,15 @@ export const uploadFiles = async (
           const { data } = await presignedUrl.json()
 
           if (data && data?.uploadUrl) {
-            fetch(data.uploadUrl, {
+            await fetch(data.uploadUrl, {
               method: 'PUT',
               body: file,
               headers: {
                 'Content-Type': file.type,
               },
             })
+          } else {
+            toast.error(`Failed to upload ${file.name}`)
           }
         } catch (error) {
           logError({

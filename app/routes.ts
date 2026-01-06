@@ -27,18 +27,17 @@ export default [
     route('form/page/update', 'routes/api/form/page/update.ts'),
     route('form/final/update', 'routes/api/form/final.update.ts'),
     route('form/page/delete', 'routes/api/form/page/delete.ts'),
+    route('form/duplicate', 'routes/api/form/duplicate.ts'),
     route('form/theme', 'routes/api/form/theme.ts'),
-
-    route('form/:formId/submissions', 'routes/api/form/submissions.ts'),
-    route('form/:formId/pages/:pageId/submissions/:submissionId', 'routes/api/form/submission.ts'),
     route('form/submissions/submit', 'routes/api/form/submissions.submit.ts'),
     route('form/toggle/allow-resubmissions', 'routes/api/form/toggle.allow-resubmissions.ts'),
 
     route('files/upload/signed', 'routes/api/files/upload.signed.ts'),
+    route('files/export/submissions/:formId', 'routes/api/files/export.submissions.ts'),
   ]),
 
   route(':formId', 'routes/entry-form.tsx'),
-  route(':formId/:pageId', 'routes/form-page.tsx'),
+  route(':formId/:pageNumber', 'routes/form-page.tsx'),
   route('submit/:formId', 'routes/submit-form.tsx'),
   route('/:submissionId/thank-you', 'routes/thank-you.tsx'),
 ] satisfies RouteConfig
@@ -59,6 +58,7 @@ export const ROUTES = {
   API_FORM_CREATE: '/api/form/create',
   API_FORM_UPDATE: '/api/form/update',
   API_FORM_FINAL_PAGE_UPDATE: '/api/form/final/update',
+  API_FORM_DUPLICATE: '/api/form/duplicate',
   API_FORM_PAGE_UPDATE: '/api/form/page/update',
   API_FORM_PAGE_DELETE: '/api/form/page/delete',
   API_FORM_DELETE: '/api/form/delete',
@@ -73,9 +73,11 @@ export const ROUTES = {
 
   API_FILES_UPLOAD_SIGNED: '/api/files/upload/signed',
 
+  API_EXPORT_SUBMISSIONS: (formId: string) => `/api/files/export/submissions/${formId}`,
+
   ENTRY_FORM: (formId: string) => `/${formId}`,
-  FORM_PAGE: (formId: string, pageId: string, participantId: string | null) =>
-    `/${formId}/${pageId}?participantId=${participantId}`,
+  FORM_PAGE: (formId: string, pageNumber: number, participantId: string | null) =>
+    `/${formId}/${pageNumber}?participantId=${participantId}`,
   SUBMIT_FORM: (formId: string) => `/${formId}/submit`,
   THANK_YOU: (submissionId: string) => `/${submissionId}/thank-you`,
 } as const

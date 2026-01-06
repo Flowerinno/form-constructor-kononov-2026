@@ -76,6 +76,7 @@ export type ConfigProps = {
   page: Page
   pagesTotal: number
   theme: DBForm['theme']
+  decodedPageAnswers?: Record<string, unknown>[]
 }
 
 export type RootProps = {

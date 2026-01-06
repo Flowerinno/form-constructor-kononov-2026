@@ -60,20 +60,22 @@ CREATE TABLE "Page" (
     "pageFields" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "pageAnswerId" TEXT,
 
     CONSTRAINT "Page_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "FormAnswer" (
+CREATE TABLE "PageAnswer" (
     "id" SERIAL NOT NULL,
     "answerId" TEXT NOT NULL,
-    "pageId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "participantId" TEXT NOT NULL,
+    "formId" TEXT NOT NULL,
+    "formSubmissionId" TEXT,
 
-    CONSTRAINT "FormAnswer_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "PageAnswer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -85,7 +87,7 @@ CREATE TABLE "FieldAnswer" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "participantId" TEXT NOT NULL,
-    "formAnswerId" TEXT NOT NULL,
+    "pageAnswerId" TEXT NOT NULL,
 
     CONSTRAINT "FieldAnswer_pkey" PRIMARY KEY ("id")
 );
@@ -93,6 +95,7 @@ CREATE TABLE "FieldAnswer" (
 -- CreateTable
 CREATE TABLE "FormSubmission" (
     "id" TEXT NOT NULL,
+    "submissionId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "formId" TEXT NOT NULL,
@@ -140,7 +143,7 @@ CREATE INDEX "User_createdAt_name_idx" ON "User"("createdAt", "name");
 CREATE UNIQUE INDEX "Participant_participantId_key" ON "Participant"("participantId");
 
 -- CreateIndex
-CREATE INDEX "Participant_email_idx" ON "Participant"("email");
+CREATE INDEX "Participant_email_createdAt_formId_completedAt_idx" ON "Participant"("email", "createdAt", "formId", "completedAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Form_formId_key" ON "Form"("formId");
@@ -152,16 +155,22 @@ CREATE INDEX "Form_title_createdAt_creatorId_publishedAt_idx" ON "Form"("title",
 CREATE UNIQUE INDEX "Page_pageId_key" ON "Page"("pageId");
 
 -- CreateIndex
-CREATE INDEX "Page_formId_createdAt_idx" ON "Page"("formId", "createdAt");
+CREATE UNIQUE INDEX "Page_pageAnswerId_key" ON "Page"("pageAnswerId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "FormAnswer_answerId_key" ON "FormAnswer"("answerId");
+CREATE INDEX "Page_formId_pageId_createdAt_idx" ON "Page"("formId", "pageId", "createdAt");
 
 -- CreateIndex
-CREATE INDEX "FormAnswer_pageId_participantId_createdAt_idx" ON "FormAnswer"("pageId", "participantId", "createdAt");
+CREATE UNIQUE INDEX "PageAnswer_answerId_key" ON "PageAnswer"("answerId");
 
 -- CreateIndex
-CREATE INDEX "FieldAnswer_fieldId_participantId_formAnswerId_createdAt_idx" ON "FieldAnswer"("fieldId", "participantId", "formAnswerId", "createdAt");
+CREATE INDEX "PageAnswer_participantId_formSubmissionId_formId_createdAt_idx" ON "PageAnswer"("participantId", "formSubmissionId", "formId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "FieldAnswer_fieldId_participantId_pageAnswerId_createdAt_idx" ON "FieldAnswer"("fieldId", "participantId", "pageAnswerId", "createdAt");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "FormSubmission_submissionId_key" ON "FormSubmission"("submissionId");
 
 -- CreateIndex
 CREATE INDEX "FormSubmission_createdAt_formId_participantId_idx" ON "FormSubmission"("createdAt", "formId", "participantId");
@@ -176,34 +185,40 @@ CREATE INDEX "Session_userId_idx" ON "Session"("userId");
 CREATE UNIQUE INDEX "VerificationToken_token_key" ON "VerificationToken"("token");
 
 -- CreateIndex
-CREATE INDEX "VerificationToken_userId_idx" ON "VerificationToken"("userId");
+CREATE INDEX "VerificationToken_userId_expiresAt_expiredAt_idx" ON "VerificationToken"("userId", "expiresAt", "expiredAt");
 
 -- AddForeignKey
 ALTER TABLE "Participant" ADD CONSTRAINT "Participant_formId_fkey" FOREIGN KEY ("formId") REFERENCES "Form"("formId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Form" ADD CONSTRAINT "Form_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Form" ADD CONSTRAINT "Form_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("userId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Page" ADD CONSTRAINT "Page_formId_fkey" FOREIGN KEY ("formId") REFERENCES "Form"("formId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FormAnswer" ADD CONSTRAINT "FormAnswer_pageId_fkey" FOREIGN KEY ("pageId") REFERENCES "Page"("pageId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Page" ADD CONSTRAINT "Page_pageAnswerId_fkey" FOREIGN KEY ("pageAnswerId") REFERENCES "PageAnswer"("answerId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FormAnswer" ADD CONSTRAINT "FormAnswer_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PageAnswer" ADD CONSTRAINT "PageAnswer_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FieldAnswer" ADD CONSTRAINT "FieldAnswer_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PageAnswer" ADD CONSTRAINT "PageAnswer_formId_fkey" FOREIGN KEY ("formId") REFERENCES "Form"("formId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FieldAnswer" ADD CONSTRAINT "FieldAnswer_formAnswerId_fkey" FOREIGN KEY ("formAnswerId") REFERENCES "FormAnswer"("answerId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PageAnswer" ADD CONSTRAINT "PageAnswer_formSubmissionId_fkey" FOREIGN KEY ("formSubmissionId") REFERENCES "FormSubmission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FormSubmission" ADD CONSTRAINT "FormSubmission_formId_fkey" FOREIGN KEY ("formId") REFERENCES "Form"("formId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "FieldAnswer" ADD CONSTRAINT "FieldAnswer_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "FormSubmission" ADD CONSTRAINT "FormSubmission_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "FieldAnswer" ADD CONSTRAINT "FieldAnswer_pageAnswerId_fkey" FOREIGN KEY ("pageAnswerId") REFERENCES "PageAnswer"("answerId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FormSubmission" ADD CONSTRAINT "FormSubmission_formId_fkey" FOREIGN KEY ("formId") REFERENCES "Form"("formId") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "FormSubmission" ADD CONSTRAINT "FormSubmission_participantId_fkey" FOREIGN KEY ("participantId") REFERENCES "Participant"("participantId") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("userId") ON DELETE RESTRICT ON UPDATE CASCADE;

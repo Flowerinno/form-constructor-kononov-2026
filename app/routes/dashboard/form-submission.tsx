@@ -4,74 +4,15 @@ import { Button } from '~/components/ui/button'
 import { Heading } from '~/components/ui/heading'
 import { Label } from '~/components/ui/label'
 import type { FormDefaultType } from '~/core/editor/types'
-import { prisma } from '~/db'
 import { customResponse } from '~/lib/response'
 import { ROUTES } from '~/routes'
-import { getDownloadUrl, getFilePrefix, verifyFileUpload } from '~/services/files/files.service'
+import { extractFilesFromAnswers } from '~/services/files/files.service.server'
+import { getUniqueFormSubmission } from '~/services/form/form.service'
 import type { Route } from './+types/form-submission'
 
 export const loader = async ({ params }: Route.LoaderArgs) => {
-  const submission = await prisma.formSubmission.findUniqueOrThrow({
-    where: { submissionId: params.submissionId },
-    include: {
-      participant: {
-        select: {
-          participantId: true,
-          email: true,
-        },
-      },
-      formAnswers: {
-        select: {
-          answerId: true,
-          pageId: true,
-          page: {
-            select: {
-              pageId: true,
-              pageNumber: true,
-              title: true,
-              pageFields: true,
-            },
-          },
-          fieldAnswers: {
-            select: {
-              fieldId: true,
-              answer: true,
-              type: true,
-              formAnswerId: true,
-            },
-          },
-        },
-      },
-    },
-  })
-
-  const files: Record<string, string[]> = {}
-  for (const formAnswer of submission.formAnswers) {
-    const pageFields = JSON.parse(formAnswer.page.pageFields as string) as FormDefaultType
-    for (const component of pageFields.content) {
-      if (component.type === 'FileField') {
-        const prefix = getFilePrefix({
-          formId: submission.formId,
-          pageId: formAnswer.pageId,
-          participantId: submission.participantId,
-          fieldId: component.props.id,
-        })
-        const filesForPrefix = await verifyFileUpload(prefix)
-
-        if (
-          filesForPrefix.keyCount > 0 &&
-          filesForPrefix.contents &&
-          filesForPrefix.contents.length > 0
-        ) {
-          for (const fileObject of filesForPrefix.contents) {
-            if (fileObject.Key === undefined) continue
-            const fileUrl = await getDownloadUrl(fileObject.Key)
-            files[component.props.id] = [...(files[component.props.id] || []), fileUrl]
-          }
-        }
-      }
-    }
-  }
+  const submission = await getUniqueFormSubmission(params.submissionId)
+  const files = await extractFilesFromAnswers(submission)
 
   return customResponse({
     formId: params.formId,
@@ -89,6 +30,7 @@ const FormSubmission = () => {
       navigator.clipboard.writeText(text)
     }
   }
+  // console.log(data.files, 'data.files')
 
   return (
     <div>
@@ -123,22 +65,30 @@ const FormSubmission = () => {
         <Label>Completed At: {new Date(data.submission.createdAt).toLocaleString() || 'N/A'}</Label>
       </div>
 
-      {data.submission.formAnswers.map((formAnswer) => {
-        const parsedPageFields = JSON.parse(formAnswer.page.pageFields as string) as FormDefaultType
+      {data.submission.pageAnswers.map((pageAnswer, idx) => {
+        const isPagePresent = pageAnswer.page !== null
+        const parsedPageFields = isPagePresent
+          ? //@ts-expect-error Not inferring type
+            (JSON.parse(pageAnswer?.page.pageFields as string) as FormDefaultType)
+          : null
         return (
-          <div key={formAnswer.answerId} className='mb-8 w-full border-b'>
+          <div key={pageAnswer.answerId} className='mb-8 w-full border-b'>
             <div className='grid grid-cols-1 sm:grid-cols-3'>
               <p className='mb-4 text-xl uppercase font-semibold'>
-                {formAnswer.page.title} ({formAnswer.page.pageNumber})
+                {pageAnswer?.page?.title ?? 'N/A'} ({pageAnswer?.page?.pageNumber ?? idx + 1})
               </p>
               <div className='col-span-2'>
-                {formAnswer.fieldAnswers.map((fieldAnswer) => {
-                  const fieldTitle =
-                    parsedPageFields.content.find((block) => block.props.id === fieldAnswer.fieldId)
-                      ?.props.label || fieldAnswer.fieldId
-
+                {pageAnswer.fieldAnswers.map((fieldAnswer) => {
+                  const fieldTitle = parsedPageFields
+                    ? parsedPageFields.content.find(
+                        (block) => block.props.id === fieldAnswer.fieldId,
+                      )?.props.label || fieldAnswer.fieldId
+                    : fieldAnswer.fieldId.split('-').at(0)
                   return (
-                    <div key={fieldAnswer.formAnswerId} className='mb-4 flex items-center gap-4'>
+                    <div
+                      key={`${fieldAnswer.pageAnswerId}-${fieldAnswer.fieldId}`}
+                      className='mb-4 flex items-center gap-4'
+                    >
                       <Heading level={4} className='font-medium'>
                         {fieldTitle}:
                       </Heading>
@@ -152,9 +102,9 @@ const FormSubmission = () => {
                             {fieldAnswer.answer} <Copy />
                           </Button>
                         )}
-                        {fieldAnswer.type === 'FILEFIELD' && data.files[fieldAnswer.fieldId] && (
+                        {fieldAnswer.type === 'FILEFIELD' && data.files[pageAnswer.answerId] && (
                           <div className='ml-4 flex items-center gap-2'>
-                            {data.files[fieldAnswer.fieldId].map((fileUrl, index) => {
+                            {data.files[pageAnswer.answerId].map((fileUrl, index) => {
                               return (
                                 <a
                                   key={`field-${fieldAnswer.fieldId}-file-${index}`}

@@ -1,7 +1,8 @@
 import { z } from 'zod'
 import type { FormDefaultType } from '~/core/editor/types'
 import { ComponentsEnum } from '~/core/editor/useConfig'
-import { getFilePrefix, verifyFileUpload } from '~/services/files/files.service'
+import { getFilePrefix } from '~/lib/utils'
+import { getFilesByPrefix } from '~/services/files/files.service.server'
 
 export const createFormSchema = z.object({
   title: z
@@ -68,6 +69,18 @@ export const deleteFormSchema = z.object({
   formId: z.string().min(1, 'Form ID is required'),
 })
 
+export const duplicateFormSchema = z.object({
+  formId: z.string().min(1, 'Form ID is required'),
+  title: z
+    .string()
+    .min(1, 'Form title is required')
+    .max(50, 'Form title must be at most 50 characters long'),
+  description: z
+    .string()
+    .max(200, 'Form description must be at most 200 characters long')
+    .optional(),
+})
+
 export const toggleFormSchema = z.object({
   formId: z.string().min(1, 'Form ID is required'),
 })
@@ -97,16 +110,28 @@ export const defaultFormPageFields = z.object({
   pageId: z.string().min(1, 'Page ID is required'),
 })
 
+export const defaultFormPageFieldsWithNumber = z.object({
+  participantId: z.string().min(1, 'Participant ID is required'),
+  formId: z.string().min(1, 'Form ID is required'),
+  pageNumber: z.number().min(1, 'Page number must be at least 1'),
+  pageId: z.string().min(1, 'Page ID is required'),
+  intent: z.enum(['next', 'prev']).optional().default('next'),
+  pageAnswerId: z.string().nullable(),
+})
+
 export type DefaultFormPageFields = z.infer<typeof defaultFormPageFields>
 
 const fieldHandlers: Record<
   string,
-  (props: any, context: any) => Promise<z.ZodTypeAny> | z.ZodTypeAny
+  (
+    props: FormDefaultType['content'][number]['props'],
+    context: { formData: DefaultFormPageFields; fieldId: string },
+  ) => Promise<z.ZodTypeAny> | z.ZodTypeAny
 > = {
   FileField: async (props, { formData, fieldId }) => {
     if (!props.required) return z.any().optional()
 
-    const files = await verifyFileUpload(getFilePrefix({ ...formData, fieldId }))
+    const files = await getFilesByPrefix(getFilePrefix({ ...formData, fieldId }))
     return files.keyCount === 0
       ? z.string().min(1, `${props.label} is required.`)
       : z.any().optional()
@@ -117,7 +142,10 @@ const fieldHandlers: Record<
     return props.required ? schema.min(1, `${props.label} is required.`) : schema.optional()
   },
 
-  TextareaField: (props) => fieldHandlers.TextInputField(props, {}),
+  TextareaField: (props) => {
+    const schema = z.string()
+    return props.required ? schema.min(1, `${props.label} is required.`) : schema.optional()
+  },
 
   SelectField: (props) => {
     if (!props.options?.length) {

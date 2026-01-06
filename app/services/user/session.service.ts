@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import type { Session } from 'react-router'
 import { TIME } from '~/core/constant'
 import { prisma } from '~/db'
-import { checkRedisUserSession } from '~/lib/redis'
+import { checkRedisUserSession, setRedisEntry } from '~/lib/redis'
 import type { UserSession } from './types'
 
 export const getUserSession = async (sessionId: string | undefined): Promise<UserSession> => {
@@ -15,7 +15,7 @@ export const getUserSession = async (sessionId: string | undefined): Promise<Use
     return cachedSession
   }
 
-  return await prisma.session.findUnique({
+  const session = await prisma.session.findUnique({
     where: {
       id: sessionId,
       expiresAt: {
@@ -33,6 +33,13 @@ export const getUserSession = async (sessionId: string | undefined): Promise<Use
       },
     },
   })
+
+  if (session) {
+    await setRedisEntry(`session:${sessionId}`, session, TIME.ONE_WEEK / 1000)
+    return session
+  }
+
+  return null
 }
 
 export const destroyUserSession = async (session: Session) => {
@@ -46,7 +53,7 @@ export const destroyUserSession = async (session: Session) => {
   })
 }
 
-export const createUserSession = async (userId: string, isNewUser = false) => {
+export const createUserSession = async (userId: string, isNewUser: boolean | null = false) => {
   await invalidateUserSessions(userId)
 
   const session = await prisma.session.create({
@@ -55,8 +62,7 @@ export const createUserSession = async (userId: string, isNewUser = false) => {
       token: crypto.randomBytes(32).toString('hex'),
       expiresAt: new Date(Date.now() + TIME.ONE_WEEK),
     },
-    select: {
-      id: true,
+    include: {
       user: {
         select: {
           userId: true,
@@ -76,12 +82,7 @@ export const createUserSession = async (userId: string, isNewUser = false) => {
     })
   }
 
-  return {
-    userId: session.user.userId,
-    email: session.user.email,
-    name: session.user.name,
-    sessionId: session.id,
-  }
+  return session
 }
 
 export const invalidateUserSessions = async (userId: string) => {

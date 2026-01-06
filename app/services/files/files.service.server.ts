@@ -1,3 +1,4 @@
+'use server'
 import {
   type ListObjectsV2CommandInput,
   type ListObjectsV2Output,
@@ -8,6 +9,8 @@ import {
 } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { logError } from '~/lib/logger'
+import { MAX_FILE_SIZE } from '~/validation/files'
+import type { getUniqueFormSubmission } from '../form/form.service'
 
 export const BUCKET_KEY = 'uploads'
 
@@ -24,8 +27,12 @@ const s3Client = new S3Client({
 export async function getUploadUrl(
   key: string,
   fileType: string,
-  expiresIn: number = 30, // 30 seconds is enough for a single upload safeguard, couldn't find docs on max limit here with client side upload
+  fileSize: number,
+  expiresIn: number = 30,
 ): Promise<string> {
+  if (fileSize > MAX_FILE_SIZE || !fileSize) {
+    throw new Error(`File size exceeds the max/min limit (0-${MAX_FILE_SIZE}) bytes`)
+  }
   try {
     const command = new PutObjectCommand({
       Bucket: BUCKET_KEY,
@@ -64,7 +71,7 @@ export const getDownloadUrl = async (key: string, expiresIn: number = 3600): Pro
   }
 }
 
-export async function verifyFileUpload(
+export async function getFilesByPrefix(
   prefix: string,
 ): Promise<{ contents: ListObjectsV2Output['Contents']; keyCount: number }> {
   const listParams: ListObjectsV2CommandInput = {
@@ -88,6 +95,42 @@ export async function verifyFileUpload(
   }
 }
 
+export async function extractFilesFromAnswers(
+  submission: Awaited<ReturnType<typeof getUniqueFormSubmission>>,
+) {
+  const files: Record<string, string[]> = {}
+
+  for (const pageAnswer of submission.pageAnswers) {
+    for (const fieldAnswer of pageAnswer.fieldAnswers) {
+      // field answer
+      if (fieldAnswer.type !== 'FILEFIELD') {
+        continue
+      }
+
+      const prefix = getServerFilePrefix({
+        formId: submission.formId,
+        pageId: pageAnswer.referencePageId,
+        participantId: submission.participantId,
+        fieldId: fieldAnswer.fieldId,
+      })
+      const filesForPrefix = await getFilesByPrefix(prefix)
+
+      if (
+        filesForPrefix.keyCount > 0 &&
+        filesForPrefix.contents &&
+        filesForPrefix.contents.length > 0
+      ) {
+        for (const fileObject of filesForPrefix.contents) {
+          if (fileObject.Key === undefined) continue
+          const fileUrl = await getDownloadUrl(fileObject.Key)
+          files[pageAnswer.answerId] = [...(files[pageAnswer.answerId] || []), fileUrl]
+        }
+      }
+    }
+  }
+  return files
+}
+
 type FileNameParams = {
   formId: string
   pageId: string
@@ -96,12 +139,12 @@ type FileNameParams = {
   isUpload?: boolean
 }
 
-export const getFilePrefix = ({
+export function getServerFilePrefix({
   formId,
-  pageId,
+  pageId = '',
   participantId,
   fieldId,
   isUpload = false,
-}: FileNameParams) => {
+}: FileNameParams) {
   return `${formId}-${pageId}-${participantId}-${fieldId}-${isUpload ? Date.now() : ''}`
 }

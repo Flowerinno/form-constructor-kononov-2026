@@ -1,17 +1,26 @@
+import type { Participant } from 'generated/prisma/client'
+import { TIME } from '~/core/constant'
 import { prisma } from '~/db'
+import { getRedisEntry, setRedisEntry } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
-import { getFilePrefix, getUploadUrl } from '~/services/files/files.service'
+import { getFilePrefix } from '~/lib/utils'
+import { getUploadUrl } from '~/services/files/files.service.server'
 import { getPresignedUploadUrlSchema } from '~/validation/files'
 import type { Route } from './+types/upload.signed'
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const body = await request.json()
-  const { formId, pageId, participantId, fieldId, fileType } =
+  const { formId, pageId, participantId, fieldId, fileType, fileSize } =
     getPresignedUploadUrlSchema.parse(body)
 
-  await prisma.participant.findUniqueOrThrow({
-    where: { participantId },
-  })
+  let participant = await getRedisEntry<Participant>('participant:' + participantId)
+
+  if (!participant) {
+    participant = await prisma.participant.findUniqueOrThrow({
+      where: { participantId },
+    })
+    await setRedisEntry('participant:' + participantId, participant, TIME.ONE_MINUTE)
+  }
 
   const uploadUrl = await getUploadUrl(
     getFilePrefix({
@@ -22,6 +31,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       isUpload: true,
     }),
     fileType,
+    fileSize,
     3600,
   )
 

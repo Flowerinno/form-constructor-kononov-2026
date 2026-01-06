@@ -1,11 +1,14 @@
-import { Form, useOutletContext } from 'react-router'
+import { Form, redirect, useOutletContext } from 'react-router'
 import { toast } from 'sonner'
 import { Button } from '~/components/ui/button'
 import { Heading } from '~/components/ui/heading'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { logError } from '~/lib/logger'
+import { isRedirectResponse } from '~/lib/response'
 import { commitSession, getSession, setSessionData, type SessionData } from '~/lib/session'
+import { ROUTES } from '~/routes'
+import { getUserSession } from '~/services/user/session.service'
 import { updateUserName } from '~/services/user/user.service'
 import { profileSchema } from '~/validation/user'
 import type { Route } from './+types/profile'
@@ -13,15 +16,22 @@ import type { Route } from './+types/profile'
 export const action = async ({ request }: Route.ActionArgs) => {
   try {
     const session = await getSession(request.headers.get('Cookie'))
+    const userSession = await getUserSession(session.get('sessionId'))
+
+    if (!userSession) {
+      throw redirect(ROUTES.LOGOUT)
+    }
+
     const formData = await request.formData()
     const data = await profileSchema.parseAsync(Object.fromEntries(formData))
     const updatedUser = await updateUserName(data.userId, data.name)
 
     setSessionData(session, {
-      userId: updatedUser.userId,
-      email: updatedUser.email,
-      name: updatedUser.name,
-      sessionId: session.get('sessionId')!,
+      ...userSession,
+      user: {
+        ...userSession.user,
+        name: updatedUser.name,
+      },
     })
 
     return new Response(null, {
@@ -31,6 +41,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       },
     })
   } catch (error) {
+    isRedirectResponse(error)
     logError({
       error,
       message: 'Profile Action Error',

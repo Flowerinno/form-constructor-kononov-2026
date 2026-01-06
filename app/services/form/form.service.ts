@@ -1,4 +1,4 @@
-import type { FormAnswer, Prisma } from 'generated/prisma/client'
+import type { PageAnswer, Prisma } from 'generated/prisma/client'
 import { PAGINATION_DEFAULTS } from '~/core/constant'
 import type { PaginationParams } from '~/core/editor/types'
 import { prisma } from '~/db'
@@ -100,7 +100,52 @@ export const countFormSubmissions = async (formId: string) => {
   })
 }
 
-export const getFormPage = async (pageId: string, formId: string, isPreview = false) => {
+export const getFormPage = async (
+  pageNumber: number,
+  formId: string,
+  isPreview = false,
+  participantId: string | null = null,
+) => {
+  const isPublishedOnly = !isPreview
+    ? ({
+        publishedAt: {
+          not: null,
+        },
+      } as Prisma.FormWhereInput)
+    : {}
+
+  return await prisma.page.findFirst({
+    where: {
+      pageNumber,
+      formId,
+      form: isPublishedOnly,
+    },
+    include: {
+      form: {
+        select: {
+          publishedAt: true,
+          pagesTotal: true,
+          theme: true,
+          pages: {
+            select: {
+              pageId: true,
+              pageNumber: true,
+            },
+          },
+        },
+      },
+      pageAnswers: {
+        where: {
+          participantId: participantId ?? undefined,
+        },
+        include: {
+          fieldAnswers: true,
+        },
+      },
+    },
+  })
+}
+export const getDashboardFormPage = async (pageId: string, formId: string, isPreview = false) => {
   const isPublishedOnly = !isPreview
     ? ({
         publishedAt: {
@@ -206,6 +251,7 @@ export const getNextFormPage = async (formId: string, currentPageNumber: number)
     },
     select: {
       pageId: true,
+      pageNumber: true,
     },
   })
 }
@@ -224,27 +270,42 @@ export const updateFormThankYouPage = async ({
   })
 }
 
-export const createFormAnswerWithFieldAnswers = async ({
-  formId,
+export const createOrUpdatePageAnswerWithFieldAnswers = async ({
   pageId,
   participantId,
   fieldAnswers,
+  pageAnswerId,
 }: {
-  formId: string
   pageId: string
   participantId: string
-  fieldAnswers: Prisma.FieldAnswerCreateManyFormAnswerInput[]
+  fieldAnswers: Prisma.FieldAnswerCreateManyPageAnswerInput[]
+  pageAnswerId: string | null
 }) => {
-  await prisma.formAnswer
-    .create({
-      data: {
+  await prisma.pageAnswer
+    .upsert({
+      where: {
+        answerId: pageAnswerId ?? '',
+      },
+      create: {
         pageId,
+        referencePageId: pageId,
         participantId,
-        formId,
         fieldAnswers: {
           createMany: {
             data: fieldAnswers,
           },
+        },
+      },
+      update: {
+        fieldAnswers: {
+          updateMany: fieldAnswers.map((fa) => ({
+            where: {
+              fieldId: fa.fieldId,
+            },
+            data: {
+              answer: fa.answer,
+            },
+          })),
         },
       },
     })
@@ -255,16 +316,18 @@ export const createFormAnswerWithFieldAnswers = async ({
 }
 
 export const getFormAnswersForParticipant = async (formId: string, participantId: string) => {
-  return await prisma.formAnswer.findMany({
+  return await prisma.pageAnswer.findMany({
     where: {
-      formId,
       participantId,
+      page: {
+        formId,
+      },
     },
   })
 }
 
 export const getLatestFormAnswerForParticipant = async (formId: string, participantId: string) => {
-  return await prisma.formAnswer.findFirst({
+  return await prisma.pageAnswer.findFirst({
     where: {
       formId,
       participantId,
@@ -285,16 +348,25 @@ export const getLatestFormAnswerForParticipant = async (formId: string, particip
 export const createFormSubmission = async (
   formId: string,
   participantId: string,
-  formAnswers: FormAnswer[],
+  pageAnswers: PageAnswer[],
 ) => {
-  return await prisma.formSubmission.create({
-    data: {
-      formId,
-      participantId,
-      formAnswers: {
-        connect: formAnswers.map((fa) => ({ id: fa.id })),
+  return await prisma.$transaction(async (tx) => {
+    const submission = await tx.formSubmission.create({
+      data: {
+        formId,
+        participantId,
+        pageAnswers: {
+          connect: pageAnswers.map((pa) => ({ id: pa.id })),
+        },
       },
-    },
+    })
+
+    await tx.participant.update({
+      where: { participantId },
+      data: { completedAt: new Date() },
+    })
+
+    return submission
   })
 }
 
@@ -307,8 +379,8 @@ export const checkExistingFormSubmission = async (formId: string, participantId:
   })
 }
 
-export const checkExistingFormPageAnswer = async (pageId: string, participantId: string) => {
-  return await prisma.formAnswer.findFirst({
+export const countNumberOfPageAnswers = async (pageId: string, participantId: string) => {
+  return await prisma.pageAnswer.count({
     where: {
       pageId,
       participantId,
@@ -389,7 +461,7 @@ export const getFormSubmissions = async ({
           completedAt: true,
         },
       },
-      formAnswers: {
+      pageAnswers: {
         select: {
           id: true,
         },
@@ -413,4 +485,57 @@ export const getFormSubmissions = async ({
     formSubmissions,
     pagination: paginationObject,
   }
+}
+
+export const getUniqueFormSubmission = async (submissionId: string) => {
+  return await prisma.formSubmission.findUniqueOrThrow({
+    where: { submissionId },
+    include: {
+      participant: {
+        select: {
+          participantId: true,
+          email: true,
+        },
+      },
+      pageAnswers: {
+        select: {
+          referencePageId: true,
+          answerId: true,
+          pageId: true,
+          page: {
+            select: {
+              pageId: true,
+              pageNumber: true,
+              title: true,
+              pageFields: true,
+            },
+          },
+          fieldAnswers: {
+            select: {
+              fieldId: true,
+              answer: true,
+              type: true,
+              pageAnswerId: true,
+              id: true,
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
+export const calculateFormConversionRate = async (formId: string) => {
+  const stats = await prisma.participant.groupBy({
+    by: ['formId'],
+    where: { formId },
+    _count: {
+      participantId: true,
+      completedAt: true,
+    },
+  })
+
+  const totalStarts = stats[0]?._count.participantId ?? 0
+  const completions = stats[0]?._count.completedAt ?? 0
+  return totalStarts > 0 ? (completions / totalStarts) * 100 : 0
 }

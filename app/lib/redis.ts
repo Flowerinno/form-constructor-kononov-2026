@@ -14,30 +14,36 @@ redisClient.on('error', (err) => {
   logger.error(err, 'Redis Client Error')
 })
 
-export const setRedisUserSession = async (
-  sessionId: string,
-  data: Record<string, any>,
-  ttlSeconds = TIME.ONE_WEEK / 1000,
-) => {
-  await redisClient.set(`session:${sessionId}`, JSON.stringify(data), {
-    EX: ttlSeconds,
-  })
-}
-
 export const checkRedisUserSession = async (sessionId: string): Promise<UserSession> => {
-  const data = await redisClient.get(`session:${sessionId}`)
+  const data = await getRedisEntry<UserSession>(`session:${sessionId}`)
   if (!data) return null
 
-  const parsed = JSON.parse(data) as UserSession
+  const parsed = data as UserSession
 
   if (parsed?.expiresAt && new Date(parsed.expiresAt) < new Date() && !parsed.expiredAt) {
-    await deleteRedisUserSession(sessionId)
+    await deleteRedisEntry(`session:${sessionId}`)
     return null
   }
 
   return parsed
 }
 
-export const deleteRedisUserSession = async (sessionId: string) => {
-  await redisClient.del(`session:${sessionId}`)
+export const setRedisEntry = async (
+  key: string,
+  value: Record<string, any> | string | number,
+  ttlSeconds = TIME.TEN_MINUTES / 1000,
+) => {
+  await redisClient.set(key, JSON.stringify(value), {
+    EX: ttlSeconds,
+  })
+}
+
+export const getRedisEntry = async <T>(key: string): Promise<T | null> => {
+  const data = await redisClient.get(key)
+  if (!data) return null
+  return JSON.parse(data) as T
+}
+
+export const deleteRedisEntry = async (key: string) => {
+  await redisClient.del(key)
 }

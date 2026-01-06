@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   CopyIcon,
+  CopyPlusIcon,
   LucideRefreshCcw,
   PencilIcon,
   PlusIcon,
@@ -53,7 +54,12 @@ import { customResponse } from '~/lib/response'
 import { cn } from '~/lib/utils'
 import { userContext } from '~/middleware/auth'
 import { ROUTES } from '~/routes'
-import { countFormSubmissions, createFormPage, getFormById } from '~/services/form/form.service'
+import {
+  calculateFormConversionRate,
+  countFormSubmissions,
+  createFormPage,
+  getFormById,
+} from '~/services/form/form.service'
 import type { Route } from './+types/form'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
@@ -62,19 +68,23 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
   UNSAFE_invariant(userData, 'userData is required')
 
   const form = await getFormById(formId)
-  const notFinishedEngagements = await prisma.formAnswer.count({
+  const notFinishedEngagements = await prisma.pageAnswer.count({
     where: {
-      formId,
       page: {
         pageNumber: 1,
+        formId,
       },
       participant: {
         completedAt: null,
       },
     },
   })
-  const formSubmissionsCount = await countFormSubmissions(formId)
-  return customResponse({ form, formSubmissionsCount, notFinishedEngagements })
+  const [formSubmissionsCount, conversion] = await Promise.all([
+    countFormSubmissions(formId),
+    calculateFormConversionRate(formId),
+  ])
+
+  return customResponse({ form, formSubmissionsCount, notFinishedEngagements, conversion })
 }
 
 export const action = async ({ params, context }: Route.LoaderArgs) => {
@@ -124,18 +134,6 @@ export default function Form() {
       toast.success('Form deleted successfully')
     }
   }
-
-  // const onToggleAllowResubmissions = () => {
-  //   const formData = new FormData()
-  //   formData.append('formId', currentForm.formId)
-
-  //   submit(formData, {
-  //     method: 'POST',
-  //     action: ROUTES.API_FORM_TOGGLE_ALLOW_RESUBMISSIONS,
-  //     navigate: false,
-  //   })
-  //   toast.success('Form resubmissions toggled')
-  // }
 
   const isFormEmpty =
     currentForm.pages.length === 0 || currentForm.pages.some((page) => !page.pageFields)
@@ -241,7 +239,7 @@ export default function Form() {
           </TooltipContent>
         </Tooltip>
         <Tooltip>
-          <TooltipTrigger asChild>
+          <TooltipTrigger>
             <Dialog>
               <DialogTrigger asChild>
                 <Button size={'icon-sm'} className='mt-1'>
@@ -294,7 +292,58 @@ export default function Form() {
             </Dialog>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Edit</p>
+            <p>Edit Thank You Page</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button size={'icon-sm'} className='mt-1'>
+                  <CopyPlusIcon />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className='sm:max-w-[425px]'>
+                <RRForm
+                  method='POST'
+                  action={ROUTES.API_FORM_DUPLICATE}
+                  navigate={false}
+                  onSubmitCapture={() => toast.success('Form duplicated successfully')}
+                  className='flex flex-col gap-4'
+                >
+                  <DialogHeader>
+                    <DialogTitle>Duplicate form</DialogTitle>
+                  </DialogHeader>
+                  <div className='grid gap-4'>
+                    <div className='grid gap-3'>
+                      <input type='hidden' name='formId' value={currentForm.formId} />
+                      <Label htmlFor='title'>Form Title*</Label>
+                      <Input
+                        id='title'
+                        name='title'
+                        minLength={5}
+                        maxLength={100}
+                        required
+                        defaultValue={''}
+                      />
+                    </div>
+                    <div className='grid gap-3'>
+                      <Label htmlFor='description'>Form Description</Label>
+                      <Input id='description' name='description' defaultValue={''} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose asChild>
+                      <Button variant='outline'>Cancel</Button>
+                    </DialogClose>
+                    <Button type='submit'>Confirm</Button>
+                  </DialogFooter>
+                </RRForm>
+              </DialogContent>
+            </Dialog>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Duplicate form</p>
           </TooltipContent>
         </Tooltip>
         <Select
@@ -336,6 +385,17 @@ export default function Form() {
           </TooltipTrigger>
           <TooltipContent>
             <p>Engaged but not finished</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant='outline'>Conversion: {data.conversion?.toFixed(2) ?? 0}%</Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>
+              (Total Submissions / Total Unique Participants) * 100 ={' '}
+              {data.conversion?.toFixed(2) ?? 0}%
+            </p>
           </TooltipContent>
         </Tooltip>
         <Button variant='outline' onClick={() => revalidator.revalidate()}>

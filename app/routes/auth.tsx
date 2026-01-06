@@ -18,7 +18,11 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
   const session = await getSession(request.headers.get('Cookie'))
 
   const query = new URL(request.url)
-  const { success, data } = loginAuthSchema.safeParse(query.searchParams)
+  const params = query.searchParams
+  const { success, data } = loginAuthSchema.safeParse({
+    otp: params.get('otp'),
+    isNewUser: params.get('isNewUser') === 'true',
+  })
 
   try {
     const maybeUserSession = await getUserSession(session.get('sessionId'))
@@ -26,7 +30,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       throw redirect(ROUTES.DASHBOARD)
     }
 
-    if (success) {
+    if (success && data.otp) {
       const otpData = await verifyOtp(data.otp)
       const verifiedSession = await createUserSession(otpData.userId, data.isNewUser)
 

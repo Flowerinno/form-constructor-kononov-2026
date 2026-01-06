@@ -67,7 +67,7 @@ export function formatFieldAnswers({
   pageFields: FormDefaultType
   participantId: string
 }) {
-  const fieldAnswersToCreate: Prisma.FieldAnswerCreateManyFormAnswerInput[] = []
+  const fieldAnswersToCreate: Prisma.FieldAnswerCreateManyPageAnswerInput[] = []
   for (const field of pageFields.content) {
     const type = FIELD_TYPE_MAP[field.type as keyof typeof FIELD_TYPE_MAP]
 
@@ -84,4 +84,22 @@ export function formatFieldAnswers({
   }
 
   return fieldAnswersToCreate
+}
+
+type FileNameParams = {
+  formId: string
+  pageId: string
+  participantId: string
+  fieldId: string
+  isUpload?: boolean
+}
+
+export function getFilePrefix({
+  formId,
+  pageId,
+  participantId,
+  fieldId,
+  isUpload = false,
+}: FileNameParams) {
+  return `${formId}-${pageId}-${participantId}-${fieldId}-${isUpload ? Date.now() : ''}`
 }

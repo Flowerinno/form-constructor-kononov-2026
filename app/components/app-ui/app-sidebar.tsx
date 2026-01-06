@@ -1,4 +1,4 @@
-import { Home, Inbox, LogOutIcon, Settings } from 'lucide-react'
+import { Home, Inbox, LogOutIcon } from 'lucide-react'
 import { Link, useLocation } from 'react-router'
 import {
   Sidebar,
@@ -23,11 +23,11 @@ const items = [
     url: ROUTES.DASHBOARD_ME,
     icon: Inbox,
   },
-  {
-    title: 'Statistics',
-    url: ROUTES.DASHBOARD_STATISTICS,
-    icon: Settings,
-  },
+  // {
+  //   title: 'Statistics',
+  //   url: ROUTES.DASHBOARD_STATISTICS,
+  //   icon: Settings,
+  // },
   {
     title: 'Logout',
     url: ROUTES.LOGOUT,

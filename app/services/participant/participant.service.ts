@@ -7,7 +7,7 @@ export const getFormParticipantByEmail = async (email: string, formId: string) =
       formId,
     },
     include: {
-      formAnswers: true,
+      pageAnswers: true,
     },
   })
 }
@@ -19,7 +19,7 @@ export const createFormParticipant = async (email: string, formId: string) => {
       formId,
     },
     include: {
-      formAnswers: true,
+      pageAnswers: true,
     },
   })
 }

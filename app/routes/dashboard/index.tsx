@@ -95,7 +95,7 @@ const DashboardIndex = () => {
         </Dialog>
         <Form onSubmit={handleSearch} className='max-w-fit'>
           <Input
-            type='search'
+            type='text'
             name='q'
             defaultValue={searchParams.get('q') ?? ''}
             placeholder='Search forms...'

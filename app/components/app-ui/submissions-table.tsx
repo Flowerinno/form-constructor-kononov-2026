@@ -67,7 +67,15 @@ export const columns: ColumnDef<Submission>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <Link viewTransition to={ROUTES.DASHBOARD_FORM_SUBMISSION(row.getValue('formId'), row.getValue('submissionId'))} className='lowercase'>{row.getValue('participant')}</Link>,
+    cell: ({ row }) => (
+      <Link
+        viewTransition
+        to={ROUTES.DASHBOARD_FORM_SUBMISSION(row.getValue('formId'), row.getValue('submissionId'))}
+        className='lowercase'
+      >
+        {row.getValue('participant')}
+      </Link>
+    ),
   },
   {
     accessorKey: 'formId',
@@ -145,9 +153,14 @@ export const columns: ColumnDef<Submission>[] = [
               Copy submission ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
-            <DropdownMenuItem>View answers</DropdownMenuItem>
-            <DropdownMenuItem className='text-destructive'>Delete submission</DropdownMenuItem>
+            <DropdownMenuItem>
+              <Link
+                viewTransition
+                to={ROUTES.DASHBOARD_FORM_SUBMISSION(submission.formId, submission.submissionId)}
+              >
+                View details
+              </Link>
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )
@@ -222,7 +235,7 @@ export function SubmissionsTable({
             }}
             className='md:min-w-[250px]'
           />
-          <DatePicker onChange={onDateChange}/>
+          <DatePicker onChange={onDateChange} />
           <Button onClick={onClear} variant='outline'>
             <Trash2Icon className='h-4 w-4' />
           </Button>

@@ -2,23 +2,25 @@ import { redirect, useLoaderData } from 'react-router'
 import { Spinner } from '~/components/app-ui/loading'
 import { RenderPage } from '~/core/editor/render-page'
 import { customResponse } from '~/lib/response'
+import { decodeExistingPageAnswers } from '~/lib/util.server'
 import { ROUTES } from '~/routes'
 import { getFormPage } from '~/services/form/form.service'
 import type { Route } from './+types/form-page'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
-  const { formId, pageId } = params
+  const { formId, pageNumber } = params
   const searchParams = new URL(request.url).searchParams
   const participantId = searchParams.get('participantId')
   const isPreview = searchParams.get('isPreview') === 'true'
-
+  console.log(formId, pageNumber, 'loader formId, pageNumber')
   if (!isPreview && !participantId) {
     throw redirect(ROUTES.ENTRY_FORM(formId))
   }
 
-  const page = await getFormPage(pageId, formId)
+  const page = await getFormPage(Number(pageNumber), formId, isPreview, participantId)
+  const decodedPageAnswers = await decodeExistingPageAnswers(page)
 
-  return customResponse({ page, isPreview, participantId })
+  return customResponse({ page, isPreview, participantId, decodedPageAnswers })
 }
 
 const FormPage = () => {
@@ -37,6 +39,7 @@ const FormPage = () => {
       pagesTotal={data.page.form.pagesTotal}
       isPreview={data.isPreview}
       participantId={data.participantId}
+      decodedPageAnswers={data.decodedPageAnswers}
     />
   )
 }

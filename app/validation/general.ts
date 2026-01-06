@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_FILE_SIZE } from './files'
 
 export const paginationSchema = z.object({
   page: z
@@ -13,7 +14,6 @@ export const paginationSchema = z.object({
 })
 export type QueryParams = z.infer<typeof paginationSchema>
 
-const maxFileSizeBytes = 10 * 1024 * 1024
 export const validateFiles = (files: FileList | null, maxFiles: number) => {
   if (!files) return []
 
@@ -24,7 +24,7 @@ export const validateFiles = (files: FileList | null, maxFiles: number) => {
   const validFiles: File[] = []
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
-    if (file.size > maxFileSizeBytes) {
+    if (file.size > MAX_FILE_SIZE) {
       throw new Error(`File ${file.name} exceeds the maximum size of 10MB.`)
     }
     validFiles.push(file)

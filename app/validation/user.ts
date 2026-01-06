@@ -9,9 +9,6 @@ export const profileSchema = z.object({
 })
 
 export const loginAuthSchema = z.object({
-  isNewUser: z
-    .string()
-    .transform((val) => val === 'true')
-    .optional(),
-  otp: z.string().optional().default(''),
+  isNewUser: z.boolean().default(false).nullable(),
+  otp: z.string().nullable().default(''),
 })

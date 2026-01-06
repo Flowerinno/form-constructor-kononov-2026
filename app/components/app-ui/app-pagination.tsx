@@ -15,7 +15,7 @@ export type AppPaginationProps = {
   endPage: number
   totalPages: number
   currentPage: number
-  generatePageLink: (page: number, location: Location) => string
+  generatePageLink: (page: number, Location: any) => string
 }
 
 const AppPagination = ({
@@ -26,7 +26,7 @@ const AppPagination = ({
   endPage,
   generatePageLink,
 }: AppPaginationProps) => {
-  //@ts-expect-error
+  //@ts-expect-error Not generic
   const location: Location<any> = useLocation()
 
   if (totalPages <= 1) {

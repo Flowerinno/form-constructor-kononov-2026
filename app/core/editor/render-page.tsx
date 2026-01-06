@@ -10,6 +10,7 @@ type RenderPageProps = {
   page: Page
   pagesTotal: number
   theme: Form['theme']
+  decodedPageAnswers?: Record<string, unknown>[]
 }
 
 const RenderPage = (props: RenderPageProps) => {
@@ -21,8 +22,11 @@ const RenderPage = (props: RenderPageProps) => {
     pagesTotal: props.pagesTotal,
     theme: props.theme,
     participantId: props.participantId,
+    decodedPageAnswers: props.decodedPageAnswers || [],
   }
+
   const config = useConfig(objectToPass)
+
   return (
     <Render
       key={`${props.pageId}-${props.theme}`}

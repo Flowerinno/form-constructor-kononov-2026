@@ -4,15 +4,15 @@ import { errorResponse } from '~/lib/response'
 import { formatFieldAnswers } from '~/lib/utils'
 import { ROUTES } from '~/routes'
 import {
-  checkExistingFormPageAnswer,
   checkExistingFormSubmission,
-  createFormAnswerWithFieldAnswers,
+  countNumberOfPageAnswers,
   createFormSubmission,
+  createOrUpdatePageAnswerWithFieldAnswers,
   getFormAnswersForParticipant,
   getFormPage,
   getNextFormPage,
 } from '~/services/form/form.service'
-import { buildZodSchema, defaultFormPageFields } from '~/validation/form'
+import { buildZodSchema, defaultFormPageFieldsWithNumber } from '~/validation/form'
 import type { Route } from './+types/submissions.submit'
 
 export const action = async ({ request }: Route.ActionArgs) => {
@@ -20,27 +20,41 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   const obj = {
     formId: formData.get('formId'),
+    pageNumber: Number(formData.get('pageNumber')),
     pageId: formData.get('pageId'),
     participantId: formData.get('participantId'),
+    intent: formData.get('intent'),
+    pageAnswerId: formData.get('pageAnswerId'),
   }
 
-  const { formId, pageId, participantId } = defaultFormPageFields.parse(obj)
+  const { formId, pageNumber, participantId, pageId, intent, pageAnswerId } =
+    defaultFormPageFieldsWithNumber.parse(obj)
 
-  // do not allow resubmissions on page AND form levels - block submission if either exists
-  const [existingFormSubmission, existingFormPageAnswer] = await Promise.all([
-    checkExistingFormSubmission(formId, participantId),
-    checkExistingFormPageAnswer(pageId, participantId),
-  ])
+  if (intent === 'prev') {
+    const currentPage = await getFormPage(pageNumber, formId)
+    if (!currentPage) {
+      throw new Error('Current page not found')
+    }
 
+    const prevPage = await getNextFormPage(formId, currentPage.pageNumber - 2)
+    if (!prevPage) {
+      throw new Error('Previous page not found')
+    }
+
+    throw redirect(ROUTES.FORM_PAGE(formId, prevPage.pageNumber, participantId))
+  }
+
+  const existingFormSubmission = await checkExistingFormSubmission(formId, participantId)
   if (existingFormSubmission) {
     throw new Error('Form submission already exists for this participant')
   }
 
-  if (existingFormPageAnswer) {
-    throw new Error('Form answer for this page already exists for this participant')
+  const pageAnswerCount = await countNumberOfPageAnswers(pageId, participantId)
+  if (pageAnswerCount > 5) {
+    throw new Error('Spam detected: Too many attempts to submit answers for this page')
   }
 
-  const page = await getFormPage(pageId, formId)
+  const page = await getFormPage(pageNumber, formId)
   if (!page) {
     throw new Error('Page not found')
   }
@@ -49,6 +63,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
   const schema = await buildZodSchema(pageFields, { formId, pageId, participantId })
 
   const { success, error, data } = schema.safeParse(Object.fromEntries(formData))
+
   if (!success) {
     return errorResponse(error)
   }
@@ -59,11 +74,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
     participantId,
   })
 
-  await createFormAnswerWithFieldAnswers({
-    formId,
+  await createOrUpdatePageAnswerWithFieldAnswers({
     pageId,
     participantId,
     fieldAnswers: fieldAnswersToCreate,
+    pageAnswerId,
   })
 
   if (page.pageNumber !== page.form.pagesTotal) {
@@ -72,7 +87,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
       throw new Error('Next page not found')
     }
 
-    throw redirect(ROUTES.FORM_PAGE(formId, nextPage.pageId, participantId))
+    throw redirect(ROUTES.FORM_PAGE(formId, nextPage.pageNumber, participantId))
   } else {
     //last page
     const formAnswers = await getFormAnswersForParticipant(formId, participantId)
