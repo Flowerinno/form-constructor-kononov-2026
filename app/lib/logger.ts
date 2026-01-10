@@ -14,7 +14,7 @@ export const logError = ({
   message,
 }: {
   error: unknown
-  meta?: Record<string, string | number>
+  meta?: Record<string, string | number | null>
   message: string
 }) => {
   return logger.error({

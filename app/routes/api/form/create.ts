@@ -8,11 +8,11 @@ import type { Route } from './+types/create'
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware]
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
-  const formData = await request.formData()
-  const validated = await createFormSchema.parseAsync(Object.fromEntries(formData))
-
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'User must be authenticated to create a form')
+
+  const formData = await request.formData()
+  const validated = await createFormSchema.parseAsync(Object.fromEntries(formData))
 
   await createUserForm(validated, userData.userId)
 

@@ -63,11 +63,12 @@ import {
 import type { Route } from './+types/form'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
-  const formId = params.formId
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
 
+  const formId = params.formId
   const form = await getFormById(formId)
+
   const notFinishedEngagements = await prisma.pageAnswer.count({
     where: {
       page: {
@@ -90,6 +91,7 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
 export const action = async ({ params, context }: Route.LoaderArgs) => {
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
+
   await createFormPage(params.formId)
 
   return data(customResponse({ message: 'Page added successfully' }), { status: 201 })

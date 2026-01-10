@@ -1,5 +1,5 @@
 import { createCookieSessionStorage, type Session } from 'react-router'
-import { TIME } from '~/core/constant'
+import { REDIS_KEYS, TIME } from '~/core/constant'
 import { invalidateUserSessions } from '~/services/user/session.service'
 import type { UserSession } from '~/services/user/types'
 import { deleteRedisEntry, setRedisEntry } from './redis'
@@ -37,12 +37,12 @@ const setSessionData = async (session: Session, sessionData: UserSession) => {
   session.set('email', sessionData.user.email)
   session.set('name', sessionData.user.name)
   session.set('sessionId', sessionData.id)
-  await setRedisEntry(`session:${sessionData.id}`, sessionData, TIME.ONE_WEEK / 1000)
+  await setRedisEntry(REDIS_KEYS.USER_SESSION(sessionData.id), sessionData, TIME.ONE_WEEK / 1000)
 }
 
 const customDestroySession = async (session: Session) => {
   await invalidateUserSessions(session.get('userId'))
-  await deleteRedisEntry(`session:${session.get('sessionId')}`)
+  await deleteRedisEntry(REDIS_KEYS.USER_SESSION(session.get('sessionId')))
   return destroySession(session)
 }
 

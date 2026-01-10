@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 import type { Session } from 'react-router'
-import { TIME } from '~/core/constant'
+import { REDIS_KEYS, TIME } from '~/core/constant'
 import { prisma } from '~/db'
 import { checkRedisUserSession, setRedisEntry } from '~/lib/redis'
 import type { UserSession } from './types'
@@ -35,7 +35,7 @@ export const getUserSession = async (sessionId: string | undefined): Promise<Use
   })
 
   if (session) {
-    await setRedisEntry(`session:${sessionId}`, session, TIME.ONE_WEEK / 1000)
+    await setRedisEntry(REDIS_KEYS.USER_SESSION(sessionId), session, TIME.ONE_WEEK / 1000)
     return session
   }
 

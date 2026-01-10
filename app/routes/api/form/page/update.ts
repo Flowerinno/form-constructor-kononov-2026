@@ -1,5 +1,7 @@
 import { data, redirect } from 'react-router'
+import { REDIS_KEYS } from '~/core/constant'
 import { prisma } from '~/db'
+import { deleteRedisEntry } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
 import { authMiddleware, userContext } from '~/middleware/auth'
 import { ROUTES } from '~/routes'
@@ -20,7 +22,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   const { formId, pageId, title } = validated
 
-  await prisma.page.update({
+  const page = await prisma.page.update({
     where: {
       formId,
       pageId,
@@ -28,7 +30,13 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     data: {
       title,
     },
+    select: {
+      id: true,
+      pageNumber: true,
+    },
   })
+
+  await deleteRedisEntry(REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, page.pageNumber))
 
   return data(customResponse({ message: 'Form updated successfully' }), { status: 201 })
 }

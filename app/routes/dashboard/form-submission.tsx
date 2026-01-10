@@ -30,7 +30,6 @@ const FormSubmission = () => {
       navigator.clipboard.writeText(text)
     }
   }
-  // console.log(data.files, 'data.files')
 
   return (
     <div>

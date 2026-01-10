@@ -185,10 +185,6 @@ export function SubmissionsTable({
   onDateChange,
   pagination,
 }: SubmissionsTableProps) {
-  if (!pagination) {
-    return null
-  }
-
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
@@ -307,32 +303,36 @@ export function SubmissionsTable({
         <div className='flex-1 text-sm text-muted-foreground'>
           {table.getFilteredRowModel().rows.length} submission(s) shown
         </div>
-        <div className='space-x-2'>
-          <Link
-            onClick={(e) => pagination.currentPage === 1 && e.preventDefault()}
-            to={
-              pagination.currentPage > 1
-                ? pagination.generatePageLink(pagination.currentPage - 1, location)
-                : '#'
-            }
-          >
-            <Button variant='outline' size='sm' disabled={!pagination.hasPrevious}>
-              Previous
-            </Button>
-          </Link>
-          <Link
-            onClick={(e) => pagination.currentPage === pagination.totalPages && e.preventDefault()}
-            to={
-              pagination.currentPage < pagination.totalPages
-                ? pagination?.generatePageLink(pagination.currentPage + 1, location)
-                : '#'
-            }
-          >
-            <Button variant='outline' size='sm' disabled={!pagination.hasNext}>
-              Next
-            </Button>
-          </Link>
-        </div>
+        {pagination && (
+          <div className='space-x-2'>
+            <Link
+              onClick={(e) => pagination.currentPage === 1 && e.preventDefault()}
+              to={
+                pagination.currentPage > 1
+                  ? pagination.generatePageLink(pagination.currentPage - 1, location)
+                  : '#'
+              }
+            >
+              <Button variant='outline' size='sm' disabled={!pagination.hasPrevious}>
+                Previous
+              </Button>
+            </Link>
+            <Link
+              onClick={(e) =>
+                pagination.currentPage === pagination.totalPages && e.preventDefault()
+              }
+              to={
+                pagination.currentPage < pagination.totalPages
+                  ? pagination?.generatePageLink(pagination.currentPage + 1, location)
+                  : '#'
+              }
+            >
+              <Button variant='outline' size='sm' disabled={!pagination.hasNext}>
+                Next
+              </Button>
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -1,10 +1,12 @@
 import { redirect, useLoaderData } from 'react-router'
 import { Spinner } from '~/components/app-ui/loading'
+import { REDIS_KEYS } from '~/core/constant'
 import { RenderPage } from '~/core/editor/render-page'
+import { getRedisEntry, setRedisEntry } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
 import { decodeExistingPageAnswers } from '~/lib/util.server'
 import { ROUTES } from '~/routes'
-import { getFormPage } from '~/services/form/form.service'
+import { getFormPage, type ReturnTypeGetFormPage } from '~/services/form/form.service'
 import type { Route } from './+types/form-page'
 
 export const loader = async ({ request, params }: Route.LoaderArgs) => {
@@ -12,13 +14,29 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   const searchParams = new URL(request.url).searchParams
   const participantId = searchParams.get('participantId')
   const isPreview = searchParams.get('isPreview') === 'true'
-  console.log(formId, pageNumber, 'loader formId, pageNumber')
+
   if (!isPreview && !participantId) {
     throw redirect(ROUTES.ENTRY_FORM(formId))
   }
 
+  const cachedPage = await getRedisEntry<ReturnTypeGetFormPage>(
+    REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, Number(pageNumber)),
+  )
+
+  if (cachedPage) {
+    const decodedPageAnswers = await decodeExistingPageAnswers(cachedPage)
+
+    return customResponse({ page: cachedPage, isPreview, participantId, decodedPageAnswers })
+  }
+
   const page = await getFormPage(Number(pageNumber), formId, isPreview, participantId)
   const decodedPageAnswers = await decodeExistingPageAnswers(page)
+
+  await setRedisEntry(
+    REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, Number(pageNumber)),
+    page,
+    24 * 60 * 60,
+  )
 
   return customResponse({ page, isPreview, participantId, decodedPageAnswers })
 }

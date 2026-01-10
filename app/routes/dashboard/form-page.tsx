@@ -14,9 +14,10 @@ import { getDashboardFormPage } from '~/services/form/form.service'
 import type { Route } from './+types/form-page'
 
 export const loader = async ({ params, context }: Route.LoaderArgs) => {
-  const { formId, pageId } = params
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'userData is required')
+
+  const { formId, pageId } = params
 
   const page = await getDashboardFormPage(pageId, formId, true)
 
@@ -104,13 +105,7 @@ const FormEdit = () => {
                     <TooltipTrigger asChild>
                       <Link
                         target='_blank'
-                        to={
-                          'window' in globalThis
-                            ? window.location.origin +
-                              ROUTES.FORM_PAGE(formId, data.pageNumber, null) +
-                              '?isPreview=true'
-                            : ''
-                        }
+                        to={ROUTES.FORM_PAGE(formId, data.pageNumber, null) + '?isPreview=true'}
                       >
                         <LinkIcon />
                       </Link>
@@ -128,6 +123,7 @@ const FormEdit = () => {
                   isPreview={true}
                   theme={page.form.theme}
                   participantId={null}
+                  isPublished={!!page.form.publishedAt}
                 />
               </>
             )}

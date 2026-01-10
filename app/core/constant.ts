@@ -32,6 +32,7 @@ export const TIME = {
   FIVE_MINUTES: 5 * 60 * 1000,
   TEN_MINUTES: 10 * 60 * 1000,
   ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
+  ONE_DAY_SECONDS: 24 * 60 * 60,
 }
 
 export const FIELD_TYPE_MAP = {
@@ -48,3 +49,10 @@ export const PAGINATION_DEFAULTS = {
   PAGE: 1,
   TAKE: 12,
 }
+
+export const REDIS_KEYS = {
+  USER_SESSION: (sessionId: string) => `session:${sessionId}`,
+  FORM_SCHEMA: (formId: string, pageId: string) => `form:${formId}:page:${pageId}:schema`,
+  FORM_PAGE_BY_NUMBER: (formId: string, pageNumber: number | string) =>
+    `form:${formId}:page:${pageNumber}`,
+} as const

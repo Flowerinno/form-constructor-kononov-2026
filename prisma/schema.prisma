@@ -64,10 +64,10 @@ model Form {
 
 model Page {
   id          Int          @id @default(autoincrement())
-  title       String?
   pageId      String       @unique @default(cuid())
-  formId      String
+  title       String?
   form        Form         @relation(fields: [formId], references: [formId], onDelete: Cascade)
+  formId      String
   pageNumber  Int
   pageFields  Json?
   createdAt   DateTime     @default(now())
@@ -88,7 +88,7 @@ model PageAnswer {
   participant      Participant     @relation(fields: [participantId], references: [participantId], onDelete: Cascade)
   participantId    String
   fieldAnswers     FieldAnswer[]
-  formSubmission   FormSubmission? @relation(fields: [formSubmissionId], references: [id], onDelete: Cascade)
+  formSubmission   FormSubmission? @relation(fields: [formSubmissionId], references: [submissionId], onDelete: Cascade)
   formSubmissionId String?
 
   @@index([pageId, participantId, formSubmissionId, referencePageId, createdAt])

@@ -22,7 +22,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
   })
 
   const pageToDelete = formWithPages?.pages.find((page) => page.pageId === pageId)
-  UNSAFE_invariant(pageToDelete, 'Page to delete not found')
+
+  if (!pageToDelete) {
+    throw new Error('Page for deletion not found')
+  }
 
   await prisma.$transaction(async (ts) => {
     await ts.page.delete({

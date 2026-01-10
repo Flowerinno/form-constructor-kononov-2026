@@ -2,6 +2,7 @@ import type { PageAnswer, Prisma } from 'generated/prisma/client'
 import { PAGINATION_DEFAULTS } from '~/core/constant'
 import type { PaginationParams } from '~/core/editor/types'
 import { prisma } from '~/db'
+import { logError } from '~/lib/logger'
 import { type CreateFormSchema, type UpdateFormThankYouPageSchema } from '~/validation/form'
 import type { QueryParams } from '~/validation/general'
 
@@ -145,6 +146,8 @@ export const getFormPage = async (
     },
   })
 }
+export type ReturnTypeGetFormPage = Awaited<ReturnType<typeof getFormPage>>
+
 export const getDashboardFormPage = async (pageId: string, formId: string, isPreview = false) => {
   const isPublishedOnly = !isPreview
     ? ({
@@ -310,7 +313,11 @@ export const createOrUpdatePageAnswerWithFieldAnswers = async ({
       },
     })
     .catch((error) => {
-      console.error('Error creating form answer with field answers:', error)
+      logError({
+        message: 'Error in createOrUpdatePageAnswerWithFieldAnswers',
+        error,
+        meta: { pageId, participantId, pageAnswerId },
+      })
       throw error
     })
 }
@@ -329,7 +336,9 @@ export const getFormAnswersForParticipant = async (formId: string, participantId
 export const getLatestFormAnswerForParticipant = async (formId: string, participantId: string) => {
   return await prisma.pageAnswer.findFirst({
     where: {
-      formId,
+      page: {
+        formId,
+      },
       participantId,
     },
     orderBy: {

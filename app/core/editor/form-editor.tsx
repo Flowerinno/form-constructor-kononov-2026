@@ -23,6 +23,7 @@ type FormEditorProps = {
   page: Page
   pagesTotal: number
   theme: Form['theme']
+  isPublished: boolean
 }
 
 const initialData = {
@@ -55,10 +56,15 @@ export function FormEditor({
   page,
   pagesTotal,
   theme,
+  isPublished,
 }: FormEditorProps) {
   const submit = useSubmit()
 
   const save = (data: unknown) => {
+    if (isPublished) {
+      toast.error('Cannot edit a published form page, please unpublish first.')
+      return
+    }
     const formData = new FormData()
     formData.append('data', JSON.stringify(data))
     formData.append('formId', formId)

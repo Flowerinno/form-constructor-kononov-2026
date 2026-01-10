@@ -58,7 +58,7 @@ export const action = async ({ request, params }: Route.ActionArgs) => {
       participant.participantId,
     )
 
-    if (latestParticipantPage) {
+    if (latestParticipantPage && latestParticipantPage.page) {
       const nextFormPage = await getNextFormPage(
         params.formId,
         latestParticipantPage.page.pageNumber,

@@ -8,11 +8,11 @@ import type { Route } from './+types/toggle.allow-resubmissions'
 export const middleware: Route.MiddlewareFunction[] = [authMiddleware]
 
 export const action = async ({ request, context }: Route.ActionArgs) => {
-  const formData = await request.formData()
-  const { formId } = await toggleFormSchema.parseAsync(Object.fromEntries(formData))
-
   const userData = context.get(userContext)
   UNSAFE_invariant(userData, 'User must be authenticated to toggle publish status')
+
+  const formData = await request.formData()
+  const { formId } = await toggleFormSchema.parseAsync(Object.fromEntries(formData))
 
   const form = await prisma.form.findUniqueOrThrow({
     where: {

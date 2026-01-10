@@ -1,9 +1,20 @@
-### Auth - email only
+### Features
 
-### Form constructor [puck editor](https://puckeditor.com/)
+- Auth - email only
+- Form constructor [puck editor](https://puckeditor.com/)
+- Emails [Resend](https://resend.com/docs/send-with-remix)
+- Redis caching
 
-### Resend for emails https://resend.com/docs/send-with-remix
-
+Potential functionality to offload heavy jobs to bullmq + redis:
 
 - form duplication
-- conversion calculation
+- formAnswer creation (a lot of parsing/db calls)
+- formSubmittion
+- export to csv
+- emails sending
+
+
+Potential functionality to cache in redis:
+- user sessions (done)
+- user facing getFormPage function (done)
+- form submit 

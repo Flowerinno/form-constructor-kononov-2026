@@ -1,6 +1,6 @@
 import { type Config } from '@measured/puck'
 import type { PageAnswer } from 'generated/prisma/browser'
-import React, { useEffect, useRef } from 'react'
+import React, { useRef } from 'react'
 import { Link, useFetcher } from 'react-router'
 import { Button } from '~/components/ui/button'
 import { Checkbox } from '~/components/ui/checkbox'
@@ -87,12 +87,6 @@ export function useConfig({
   const fetcher = useFetcher()
   const data = fetcher.data as ErrorResponse
   const buttonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (data && data.error) {
-      console.log('We got errors')
-    }
-  }, [data])
 
   return {
     components: {
@@ -601,9 +595,10 @@ export function useConfig({
             action,
           })
         }
+
         const pageAnswer = page.pageAnswers?.find((pa: PageAnswer) => pa.pageId === page.pageId)
         const pageAnswerId = pageAnswer ? pageAnswer.answerId : ''
-        console.log(pageAnswerId, 'pageAnswerId')
+
         return (
           <div
             id='puckpage-container'

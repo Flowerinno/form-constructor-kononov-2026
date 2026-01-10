@@ -28,6 +28,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       title,
       description: description ?? '',
       creatorId: userData.userId,
+      pagesTotal: form.pagesTotal,
       pages: {
         createMany: {
           data: form.pages.map((p) => ({
