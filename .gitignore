@@ -1,6 +1,5 @@
 .DS_Store
 .env
-.env.production
 /node_modules/
 
 # React Router
@@ -8,3 +7,4 @@
 /build/
 
 /generated/prisma
+.env.production
