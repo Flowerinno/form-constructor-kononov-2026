@@ -1,7 +1,7 @@
 import { redirect } from 'react-router'
 import { REDIS_KEYS, TIME } from '~/core/constant'
 import type { FormDefaultType } from '~/core/editor/types'
-import { getRedisEntry, setRedisEntry } from '~/lib/redis'
+import { deleteRedisByPattern, getRedisEntry, setRedisEntry } from '~/lib/redis'
 import { errorResponse } from '~/lib/response'
 import { checkRateLimit } from '~/lib/util.server'
 import { formatFieldAnswers } from '~/lib/utils'
@@ -105,6 +105,11 @@ export const action = async ({ request }: Route.ActionArgs) => {
     //last page
     const formAnswers = await getFormAnswersForParticipant(formId, participantId)
     const submission = await createFormSubmission(formId, participantId, formAnswers)
+
+    await Promise.all([
+      deleteRedisByPattern(REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, '*')),
+      deleteRedisByPattern(REDIS_KEYS.PARTICIPANT(participantId)),
+    ])
 
     throw redirect(ROUTES.THANK_YOU(submission.submissionId))
   }

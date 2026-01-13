@@ -1,7 +1,7 @@
 import { createClient } from 'redis'
 import { REDIS_KEYS, TIME } from '~/core/constant'
 import type { UserSession } from '~/services/user/types'
-import { logger } from './logger'
+import { logError, logger } from './logger'
 
 export const redisClient = createClient({
   url: process.env.REDIS_URL || 'redis://localhost:6379',
@@ -55,7 +55,18 @@ export const deleteRedisByPattern = async (pattern: string) => {
   })
 
   for await (const key of stream) {
-    if (typeof key !== 'string') continue
-    await redisClient.del(key)
+    try {
+      if (key.length > 0) {
+        await redisClient.del(key)
+      }
+    } catch (error) {
+      logError({
+        error,
+        message: `Failed to delete redis key: ${key}`,
+        meta: {
+          key: JSON.stringify(key),
+        },
+      })
+    }
   }
 }

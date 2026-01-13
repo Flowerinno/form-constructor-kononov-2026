@@ -56,4 +56,6 @@ export const REDIS_KEYS = {
   FORM_SCHEMA: (formId: string, pageId: string) => `form:${formId}:page:${pageId}:schema`,
   FORM_PAGE_BY_NUMBER: (formId: string, pageNumber: number | string) =>
     `form:${formId}:page:${pageNumber}`,
+  FORM_WILDCARD: (formId: string) => `form:${formId}:*`,
+  PARTICIPANT: (participantId: string) => `participant:${participantId}`,
 } as const

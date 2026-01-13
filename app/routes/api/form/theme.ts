@@ -1,5 +1,7 @@
 import { data, UNSAFE_invariant } from 'react-router'
+import { REDIS_KEYS } from '~/core/constant'
 import { prisma } from '~/db'
+import { deleteRedisByPattern } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
 import { authMiddleware, userContext } from '~/middleware/auth'
 import { updateThemeFormSchema } from '~/validation/form'
@@ -22,6 +24,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
       theme,
     },
   })
+
+  await deleteRedisByPattern(REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, '*'))
 
   return data(customResponse({ message: 'Form theme changed successfully' }), { status: 201 })
 }

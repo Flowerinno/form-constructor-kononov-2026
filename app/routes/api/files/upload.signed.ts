@@ -17,7 +17,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
 
   if (!participant) {
     participant = await prisma.participant.findUniqueOrThrow({
-      where: { participantId },
+      where: { participantId, completedAt: null },
     })
     await setRedisEntry('participant:' + participantId, participant, TIME.ONE_MINUTE)
   }
