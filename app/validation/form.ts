@@ -113,7 +113,10 @@ export const defaultFormPageFields = z.object({
 export const defaultFormPageFieldsWithNumber = z.object({
   participantId: z.string().min(1, 'Participant ID is required'),
   formId: z.string().min(1, 'Form ID is required'),
-  pageNumber: z.number().min(1, 'Page number must be at least 1'),
+  pageNumber: z
+    .string()
+    .transform((v) => Number(v))
+    .refine((v) => !isNaN(v) && v > 0, 'Page number must be a positive number'),
   pageId: z.string().min(1, 'Page ID is required'),
   intent: z.enum(['next', 'prev']).optional().default('next'),
   pageAnswerId: z.string().nullable(),

@@ -370,7 +370,7 @@ export default function Form() {
         </Select>
       </Heading>
 
-      <div className='mt-4 flex gap-2'>
+      <div className='mt-4 flex flex-wrap gap-2'>
         <Tooltip>
           <TooltipTrigger asChild>
             <Link to={ROUTES.DASHBOARD_FORM_SUBMISSIONS(currentForm.formId)}>

@@ -3,6 +3,7 @@ import { REDIS_KEYS, TIME } from '~/core/constant'
 import type { FormDefaultType } from '~/core/editor/types'
 import { getRedisEntry, setRedisEntry } from '~/lib/redis'
 import { errorResponse } from '~/lib/response'
+import { checkRateLimit } from '~/lib/util.server'
 import { formatFieldAnswers } from '~/lib/utils'
 import { ROUTES } from '~/routes'
 import {
@@ -20,18 +21,17 @@ import type { Route } from './+types/submissions.submit'
 
 export const action = async ({ request }: Route.ActionArgs) => {
   const formData = await request.formData()
-
-  const obj = {
-    formId: formData.get('formId'),
-    pageNumber: Number(formData.get('pageNumber')),
-    pageId: formData.get('pageId'),
-    participantId: formData.get('participantId'),
-    intent: formData.get('intent'),
-    pageAnswerId: formData.get('pageAnswerId'),
-  }
-
   const { formId, pageNumber, participantId, pageId, intent, pageAnswerId } =
-    defaultFormPageFieldsWithNumber.parse(obj)
+    defaultFormPageFieldsWithNumber.parse(Object.fromEntries(formData))
+
+  const { isExceeded } = await checkRateLimit(participantId, 50)
+  if (isExceeded) {
+    throw redirect(ROUTES.FORM_PAGE(formId, pageNumber, participantId), {
+      headers: {
+        'X-RateLimit-Error': 'Too many requests. Please try again later.',
+      },
+    })
+  }
 
   let currentPage: ReturnTypeGetFormPage = null
   const cachedPage = await getRedisEntry<ReturnTypeGetFormPage>(

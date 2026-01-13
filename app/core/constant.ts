@@ -31,8 +31,9 @@ export const TIME = {
   ONE_MINUTE: 60 * 1000,
   FIVE_MINUTES: 5 * 60 * 1000,
   TEN_MINUTES: 10 * 60 * 1000,
-  ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
   ONE_DAY_SECONDS: 24 * 60 * 60,
+  MINUTE_SECONDS: 60,
+  ONE_WEEK: 7 * 24 * 60 * 60 * 1000,
 }
 
 export const FIELD_TYPE_MAP = {

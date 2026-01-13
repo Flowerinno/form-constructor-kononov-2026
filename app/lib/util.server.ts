@@ -1,9 +1,11 @@
+import { TIME } from '~/core/constant'
 import {
   getDownloadUrl,
   getFilesByPrefix,
   getServerFilePrefix,
 } from '~/services/files/files.service.server'
 import type { getFormPage } from '~/services/form/form.service'
+import { redisClient } from './redis'
 
 export async function decodeExistingPageAnswers(data: Awaited<ReturnType<typeof getFormPage>>) {
   const fieldsAnswers: Record<string, unknown>[] = []
@@ -45,4 +47,25 @@ export async function decodeExistingPageAnswers(data: Awaited<ReturnType<typeof 
   }
 
   return fieldsAnswers
+}
+
+const LIMIT = 100
+export async function checkRateLimit(
+  id: string,
+  limit: number = LIMIT,
+  windowSeconds: number = TIME.MINUTE_SECONDS,
+) {
+  const key = `ratelimit:${id}`
+  const current = await redisClient.incr(key)
+
+  if (current === 1) {
+    await redisClient.expire(key, windowSeconds)
+  }
+
+  return {
+    current,
+    limit: limit.toString(),
+    remaining: Math.max(0, limit - current),
+    isExceeded: current > limit,
+  }
 }

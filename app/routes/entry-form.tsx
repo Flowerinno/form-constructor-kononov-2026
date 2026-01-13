@@ -3,6 +3,7 @@ import { Button } from '~/components/ui/button'
 import { Input } from '~/components/ui/input'
 import { Label } from '~/components/ui/label'
 import { customResponse } from '~/lib/response'
+import { checkRateLimit } from '~/lib/util.server'
 import { ROUTES } from '~/routes'
 import {
   checkExistingFormSubmission,
@@ -20,6 +21,12 @@ import type { Route } from './+types/entry-form'
 export const action = async ({ request, params }: Route.ActionArgs) => {
   const formData = await request.formData()
   const { email } = await entryFormSubmission.parseAsync(Object.fromEntries(formData))
+
+  const { isExceeded } = await checkRateLimit(email, 5)
+
+  if (isExceeded) {
+    return customResponse({ message: 'Too many requests. Please try again later.' })
+  }
 
   const form = await getFormById(params.formId)
 
