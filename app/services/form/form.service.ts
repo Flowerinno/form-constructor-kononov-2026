@@ -188,7 +188,7 @@ export const createFormPage = async (formId: string) => {
     })
 
     return await ts.form.update({
-      where: { formId },
+      where: { formId, publishedAt: null },
       data: {
         pagesTotal: {
           increment: 1,

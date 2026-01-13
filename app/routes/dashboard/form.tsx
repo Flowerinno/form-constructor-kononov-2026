@@ -183,7 +183,7 @@ export default function Form() {
         <Tooltip>
           <TooltipTrigger asChild>
             <RRForm method='POST' navigate={false}>
-              <Button size={'icon-sm'} className='mt-1'>
+              <Button disabled={!!currentForm.publishedAt} size={'icon-sm'} className='mt-1'>
                 <PlusIcon />
               </Button>
             </RRForm>
@@ -213,7 +213,12 @@ export default function Form() {
         </Tooltip>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button onClick={onFormDelete} size={'icon-sm'} className='mt-1'>
+            <Button
+              disabled={!!currentForm.publishedAt}
+              onClick={onFormDelete}
+              size={'icon-sm'}
+              className='mt-1'
+            >
               <TrashIcon />
             </Button>
           </TooltipTrigger>

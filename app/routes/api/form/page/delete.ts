@@ -21,6 +21,10 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     },
   })
 
+  if (formWithPages?.publishedAt !== null) {
+    throw new Error('Cannot delete page from published form')
+  }
+
   const pageToDelete = formWithPages?.pages.find((page) => page.pageId === pageId)
 
   if (!pageToDelete) {

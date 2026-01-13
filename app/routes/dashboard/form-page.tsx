@@ -25,7 +25,13 @@ export const loader = async ({ params, context }: Route.LoaderArgs) => {
     throw new Error('Page not found')
   }
 
-  return customResponse({ page, formId, pageId, pageNumber: page.pageNumber })
+  return customResponse({
+    page,
+    formId,
+    pageId,
+    pageNumber: page.pageNumber,
+    isPublished: !!page.form.publishedAt,
+  })
 }
 
 const FormEdit = () => {
@@ -37,6 +43,11 @@ const FormEdit = () => {
   const pageId = data.pageId
 
   const onDeletePage = async () => {
+    if (data.isPublished) {
+      toast.error('Cannot delete page from published form')
+      return
+    }
+
     const agree = confirm(
       'Are you sure you want to delete this page? This action cannot be undone.',
     )
