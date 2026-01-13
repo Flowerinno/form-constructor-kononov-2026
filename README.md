@@ -11,10 +11,4 @@ Potential functionality to offload heavy jobs to bullmq + redis:
 - formAnswer creation (a lot of parsing/db calls)
 - formSubmittion
 - export to csv
-- emails sending
-
-
-Potential functionality to cache in redis:
-- user sessions (done)
-- user facing getFormPage function (done)
-- form submit 
+- emails
