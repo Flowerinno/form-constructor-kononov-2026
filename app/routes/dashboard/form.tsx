@@ -195,6 +195,7 @@ export default function Form() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              disabled={!currentForm.publishedAt}
               onClick={() => {
                 navigator.clipboard.writeText(
                   window.location.origin + ROUTES.ENTRY_FORM(currentForm.formId),

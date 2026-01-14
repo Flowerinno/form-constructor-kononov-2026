@@ -1,7 +1,6 @@
 import React from 'react'
 import {
   isRouteErrorResponse,
-  Link,
   Links,
   Meta,
   Outlet,
@@ -14,7 +13,6 @@ import { SunIcon } from 'lucide-react'
 import { useState } from 'react'
 import type { Route } from './+types/root'
 import './app.css'
-import { Button } from './components/ui/button'
 import { Toaster } from './components/ui/sonner'
 import { cn } from './lib/utils'
 import { ROUTES } from './routes'
@@ -87,9 +85,6 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
           <code>{stack}</code>
         </pre>
       )}
-      <Link viewTransition to={ROUTES.AUTH}>
-        <Button>Go home</Button>
-      </Link>
     </main>
   )
 }

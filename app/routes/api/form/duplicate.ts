@@ -38,6 +38,8 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
           })),
         },
       },
+      finalTitle: form.finalTitle,
+      finalDescription: form.finalDescription,
     },
   })
 

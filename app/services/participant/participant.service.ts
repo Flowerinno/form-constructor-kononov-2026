@@ -3,7 +3,10 @@ import { prisma } from '~/db'
 export const getFormParticipantByEmail = async (email: string, formId: string) => {
   return await prisma.participant.findFirst({
     where: {
-      email,
+      email: {
+        equals: email,
+        mode: 'insensitive',
+      },
       formId,
     },
     include: {
