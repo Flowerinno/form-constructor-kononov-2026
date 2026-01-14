@@ -467,6 +467,7 @@ export function useConfig({
                 multiple={multiple}
                 required={getFilledFileAnswers(decodedPageAnswers, id) ? false : required}
                 onChange={async (e) => {
+                  if (isPreview) return
                   buttonRef.current?.setAttribute('disabled', 'true')
                   uploadFiles(
                     e.target.files,

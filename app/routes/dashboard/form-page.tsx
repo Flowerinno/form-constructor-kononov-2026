@@ -116,7 +116,7 @@ const FormEdit = () => {
                     <TooltipTrigger asChild>
                       <Link
                         target='_blank'
-                        to={ROUTES.FORM_PAGE(formId, data.pageNumber, null) + '?isPreview=true'}
+                        to={ROUTES.FORM_PAGE(formId, data.pageNumber, null) + '&isPreview=true'}
                       >
                         <LinkIcon />
                       </Link>

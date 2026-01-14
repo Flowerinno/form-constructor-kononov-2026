@@ -20,6 +20,11 @@ export const loader = async ({ request, params }: Route.LoaderArgs) => {
   }
 
   const page = await getFormPage(Number(pageNumber), formId, isPreview, participantId)
+
+  if (!page) {
+    throw redirect(ROUTES.ENTRY_FORM(formId))
+  }
+
   const decodedPageAnswers = await decodeExistingPageAnswers(page)
 
   await setRedisEntry(
@@ -35,7 +40,9 @@ const FormPage = () => {
   const { data } = useLoaderData<typeof loader>()
 
   if (!data || !data.page) {
-    return <Spinner />
+    if (data.isPreview === false) {
+      return <Spinner />
+    }
   }
 
   return (
