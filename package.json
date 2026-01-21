@@ -5,7 +5,7 @@
   "scripts": {
     "build": "react-router build",
     "dev": "react-router dev",
-    "start": "react-router-serve ./build/server/index.js NODE_ENV=production PORT=8080",
+    "start": "react-router-serve ./build/server/index.js NODE_ENV=production PORT=3000",
     "typecheck": "react-router typegen && tsc",
     "lint": "npx eslint --fix ./app/**/*.{ts,tsx}",
     "fmt": "npx prettier --write ./app/**/*.{ts,tsx,js,json,css,md}"

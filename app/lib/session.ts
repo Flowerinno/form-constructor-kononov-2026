@@ -43,7 +43,7 @@ const setSessionData = async (session: Session, sessionData: UserSession) => {
 const customDestroySession = async (session: Session) => {
   await invalidateUserSessions(session.get('userId'))
   await deleteRedisEntry(REDIS_KEYS.USER_SESSION(session.get('sessionId')))
-  return destroySession(session)
+  return await destroySession(session)
 }
 
 export { commitSession, customDestroySession as destroySession, getSession, setSessionData }
