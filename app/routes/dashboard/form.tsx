@@ -48,6 +48,7 @@ import {
   SelectValue,
 } from '~/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '~/components/ui/tooltip'
+import { HTTP_STATUS_CODES } from '~/core/constant'
 import { RenderPage } from '~/core/editor/render-page'
 import { prisma } from '~/db'
 import { customResponse } from '~/lib/response'
@@ -94,7 +95,9 @@ export const action = async ({ params, context }: Route.LoaderArgs) => {
 
   await createFormPage(params.formId)
 
-  return data(customResponse({ message: 'Page added successfully' }), { status: 201 })
+  return data(customResponse({ message: 'Page added successfully' }), {
+    status: HTTP_STATUS_CODES.CREATED,
+  })
 }
 
 export default function Form() {

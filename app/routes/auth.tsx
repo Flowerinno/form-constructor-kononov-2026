@@ -13,6 +13,7 @@ import { signIn } from '~/services/user/user.service'
 import { authSchema } from '~/validation/auth'
 import { loginAuthSchema } from '~/validation/user'
 import type { Route } from './+types/auth'
+import { HTTP_STATUS_CODES } from '~/core/constant'
 
 export const loader = async ({ request }: Route.LoaderArgs) => {
   const session = await getSession(request.headers.get('Cookie'))
@@ -37,7 +38,7 @@ export const loader = async ({ request }: Route.LoaderArgs) => {
       await setSessionData(session, verifiedSession)
 
       throw redirect(ROUTES.DASHBOARD, {
-        status: 302,
+        status: HTTP_STATUS_CODES.FOUND,
         headers: {
           'Set-Cookie': await commitSession(session),
         },

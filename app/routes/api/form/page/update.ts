@@ -1,5 +1,5 @@
 import { data, redirect } from 'react-router'
-import { REDIS_KEYS } from '~/core/constant'
+import { HTTP_STATUS_CODES, REDIS_KEYS } from '~/core/constant'
 import { prisma } from '~/db'
 import { deleteRedisEntry } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
@@ -38,5 +38,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   await deleteRedisEntry(REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, page.pageNumber))
 
-  return data(customResponse({ message: 'Form updated successfully' }), { status: 201 })
+  return data(customResponse({ message: 'Form updated successfully' }), {
+    status: HTTP_STATUS_CODES.CREATED,
+  })
 }

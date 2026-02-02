@@ -1,4 +1,5 @@
 import { data, UNSAFE_invariant } from 'react-router'
+import { HTTP_STATUS_CODES } from '~/core/constant'
 import { customResponse } from '~/lib/response'
 import { authMiddleware, userContext } from '~/middleware/auth'
 import { createUserForm } from '~/services/form/form.service'
@@ -16,5 +17,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   await createUserForm(validated, userData.userId)
 
-  return data(customResponse({ message: 'Form created successfully' }), { status: 201 })
+  return data(customResponse({ message: 'Form created successfully' }), {
+    status: HTTP_STATUS_CODES.CREATED,
+  })
 }

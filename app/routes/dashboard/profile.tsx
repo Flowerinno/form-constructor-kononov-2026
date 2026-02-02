@@ -12,6 +12,7 @@ import { getUserSession } from '~/services/user/session.service'
 import { updateUserName } from '~/services/user/user.service'
 import { profileSchema } from '~/validation/user'
 import type { Route } from './+types/profile'
+import { HTTP_STATUS_CODES } from '~/core/constant'
 
 export const action = async ({ request }: Route.ActionArgs) => {
   try {
@@ -35,7 +36,7 @@ export const action = async ({ request }: Route.ActionArgs) => {
     })
 
     return new Response(null, {
-      status: 200,
+      status: HTTP_STATUS_CODES.OK,
       headers: {
         'Set-Cookie': await commitSession(session),
       },

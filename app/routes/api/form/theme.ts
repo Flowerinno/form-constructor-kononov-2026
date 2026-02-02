@@ -1,5 +1,5 @@
 import { data, UNSAFE_invariant } from 'react-router'
-import { REDIS_KEYS } from '~/core/constant'
+import { HTTP_STATUS_CODES, REDIS_KEYS } from '~/core/constant'
 import { prisma } from '~/db'
 import { deleteRedisByPattern } from '~/lib/redis'
 import { customResponse } from '~/lib/response'
@@ -27,5 +27,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
 
   await deleteRedisByPattern(REDIS_KEYS.FORM_PAGE_BY_NUMBER(formId, '*'))
 
-  return data(customResponse({ message: 'Form theme changed successfully' }), { status: 201 })
+  return data(customResponse({ message: 'Form theme changed successfully' }), {
+    status: HTTP_STATUS_CODES.CREATED,
+  })
 }

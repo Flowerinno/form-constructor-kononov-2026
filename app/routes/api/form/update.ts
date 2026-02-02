@@ -1,5 +1,6 @@
 import type { JsonObject } from '@prisma/client/runtime/library'
 import { data, redirect } from 'react-router'
+import { HTTP_STATUS_CODES } from '~/core/constant'
 import { prisma } from '~/db'
 import { customResponse } from '~/lib/response'
 import { authMiddleware, userContext } from '~/middleware/auth'
@@ -31,5 +32,7 @@ export const action = async ({ request, context }: Route.ActionArgs) => {
     },
   })
 
-  return data(customResponse({ message: 'Form updated successfully' }), { status: 201 })
+  return data(customResponse({ message: 'Form updated successfully' }), {
+    status: HTTP_STATUS_CODES.CREATED,
+  })
 }
